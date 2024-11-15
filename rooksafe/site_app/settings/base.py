@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from .local import *
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -34,8 +34,8 @@ BASE_APPS = [
 ]
 
 LOCAL_APPS = [
-    'app',
     'site_app',
+    'apps.users',
 ]
 
 THIRD_APPS = [
