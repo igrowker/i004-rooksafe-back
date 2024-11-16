@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+
 
 # Modelo user modificado
 AUTH_USER_MODEL = 'users.User'
@@ -43,7 +45,8 @@ LOCAL_APPS = [
 THIRD_APPS = [
     'rest_framework',
     'corsheaders',
-    'rest_framework.authtoken',
+    'rest_framework.simplejwt.authenticacion.JWTAuthentication',
+    'rest_framework_simplejwt',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -77,9 +80,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'site_app.wsgi.application'
-
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -121,3 +121,24 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30), #Vida util del token, luego debera usar un token de actualizacion para obtener un nuevo token de acceso
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),    #Validez del token de actualizacion
+    'ALGORITHM': 'HS256',                           #Algoritmo de encriptacion
+    'SIGNING_KEY': 'SECRET_KEY',                    #Clave secreta para firmar tokens. Almacenar en variables de entorno o servicio de gestion secreto 
+                                                    #como AWS Secret Manager o Kubernetes Secrets
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_CREDENTIALS = True
