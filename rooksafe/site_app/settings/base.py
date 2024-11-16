@@ -12,7 +12,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
-
+# Modelo user modificado
+AUTH_USER_MODEL = 'users.User'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,11 +37,13 @@ BASE_APPS = [
 LOCAL_APPS = [
     'site_app',
     'apps.users',
+    
 ]
 
 THIRD_APPS = [
     'rest_framework',
     'corsheaders',
+    'rest_framework.authtoken',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
