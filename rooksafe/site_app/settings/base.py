@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 
 
+
 # Modelo user modificado
 AUTH_USER_MODEL = 'users.User'
 
@@ -45,7 +46,6 @@ LOCAL_APPS = [
 THIRD_APPS = [
     'rest_framework',
     'corsheaders',
-    'rest_framework.simplejwt.authenticacion.JWTAuthentication',
     'rest_framework_simplejwt',
 ]
 

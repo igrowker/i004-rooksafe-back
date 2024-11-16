@@ -23,7 +23,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
         # Agregar información personalizada al token
         token['name'] = user.username
         token['email'] = user.email

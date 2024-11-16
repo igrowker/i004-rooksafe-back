@@ -1,13 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
 
 
 class RegisterView(APIView):
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
+        print(request.data)
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -23,5 +24,5 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        return Response({'message': 'Este endpoint está protegido!'})
+    def get(self, request, *args, **kwargs):
+        return Response({'message': 'Este endpoint está protegido!'}, status=status.HTTP_200_OK)
