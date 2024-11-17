@@ -23,7 +23,21 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # Agregar información personalizada al token
-        token['name'] = user.username
+        # Add custom claims
+        token['name'] = user.name
         token['email'] = user.email
+        token['experience_level'] = user.experience_level
         return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        # Add additional response data
+        data.update({
+            'user': {
+                'id': self.user.id,
+                'name': self.user.name,
+                'email': self.user.email,
+                'experience_level': self.user.experience_level,
+            }
+        })
+        return data
