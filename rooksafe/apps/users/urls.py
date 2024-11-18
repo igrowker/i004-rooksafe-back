@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/auth/protected/', ProtectedView.as_view(), name='protected'),
+    path('update-experience/', UpdateExperienceLevelView.as_view(), name='update_experience_level'),
 ]

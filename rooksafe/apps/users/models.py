@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
+from rest_framework import serializers
+from .models import User
 
 # Create your models here.
 # Tabla: users
@@ -54,3 +56,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.name
+
+class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['experience_level']
+
+    def validate_experience_level(self, value):
+        if value not in ['básico', 'intermedio', 'avanzado']:
+            raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
+        return value

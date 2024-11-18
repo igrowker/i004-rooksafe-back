@@ -40,7 +40,7 @@ BASE_APPS = [
 LOCAL_APPS = [
     'site_app',
     'apps.users',
-    
+    'apps.educationContent',
 ]
 
 THIRD_APPS = [
