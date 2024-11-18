@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
+from .models import Simulation
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,3 +42,15 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             }
         })
         return data
+
+
+class SimulationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Simulation
+        fields = ['investment_amount', 'asset_type']
+
+    def validate_investment_amount(self, value):
+        """Validar que el monto de inversión sea positivo."""
+        if value <= 0:
+            raise serializers.ValidationError("El monto de inversión debe ser mayor que cero.")
+        return value
