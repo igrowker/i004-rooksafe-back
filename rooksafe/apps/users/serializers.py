@@ -41,3 +41,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             }
         })
         return data
+
+
+# User profile
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'experience_level', 'created_at', 'updated_at']
+        read_only_fields = ['email', 'updated_at', 'created_at']
