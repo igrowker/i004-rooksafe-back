@@ -1,26 +1,25 @@
 from .models import Evaluations
 
 def calcular_puntaje_y_nivel(respuestas_usuario):
-    puntaje = 0
+
+    # calculo el puntaje sumando todos los valores
+    puntaje = sum(respuestas_usuario)
     total_preguntas = len(respuestas_usuario)
     
-    # calcular puntaje sumando por cada respuesta correcta
-    for respuesta in respuestas_usuario:
-        if respuesta.get("correcta"):  # Esta es la respuesta esperada
-            puntaje += 1
+    # calculo el porcentaje del puntaje sobre el máximo posible (asumimos 10 como puntaje máximo)
+    max_puntaje = total_preguntas * 10
+    porcentaje_aciertos = (puntaje / max_puntaje) * 100
 
-    # calculo de porcentaje
-    porcentaje_aciertos = (puntaje / total_preguntas) * 100
-
-    # determino nivel de riesgo
+    # vemos el nivel de riesgo
     if porcentaje_aciertos >= 80:
-        nivel_riesgo = "avanzado"
+        nivel_riesgo = "Agresivo"
     elif porcentaje_aciertos >= 45:
-        nivel_riesgo = "intermedio"
+        nivel_riesgo = "Moderado"
     else:
-        nivel_riesgo = "principiante"
+        nivel_riesgo = "Conservador"
 
     return puntaje, nivel_riesgo
+
 
 def crear_evaluacion(user, trader_name, puntaje, nivel_riesgo, total_preguntas):
     

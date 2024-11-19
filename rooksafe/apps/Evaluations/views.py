@@ -18,12 +18,12 @@ class EvaluacionView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        respuestas_usuario = request.data.get("respuestas")
+        puntajes_usuario  = request.data.get("respuestas")
 
         trader_name = request.user.username  
 
         # llamo a calcular el porcentaje pasando las respuestas del usuario
-        puntaje, nivel_riesgo = calcular_puntaje_y_nivel(respuestas_usuario)
+        puntaje, nivel_riesgo = calcular_puntaje_y_nivel(puntajes_usuario)
         
         # creo la evaluacion 
         evaluacion = crear_evaluacion(
