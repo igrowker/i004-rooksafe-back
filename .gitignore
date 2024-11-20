@@ -54,8 +54,8 @@ media/
 *.bin
 
 # Archivos de configuración de Docker
-docker-compose.override.yml
-docker-compose.*.yml
+#docker-compose.override.yml
+#docker-compose.*.yml
 
 # Archivos de node (si utilizas npm o yarn para manejar recursos estáticos)
 node_modules/

@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer
+
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -37,8 +39,7 @@ class ProtectedView(APIView):
 class LoginView(TokenObtainPairView):
     
     serializer_class = CustomTokenObtainPairSerializer
-
-
+    
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
@@ -66,5 +67,21 @@ class UserProfileView(APIView):
 
             serializer.save()
             return Response({'message': 'Perfil actualizado', 'updated_at': user.updated_at})
+
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      
+# Update Experience Level View
+class UpdateExperienceLevelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # Ensure the user is logged in
+
+    def patch(self, request):
+        user = request.user  # Get the authenticated user
+        serializer = UpdateExperienceLevelSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Experience level updated successfully!',
+                'experience_level': serializer.data['experience_level']
+            }, status=status.HTTP_200_OK)
