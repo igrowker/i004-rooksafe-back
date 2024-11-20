@@ -42,6 +42,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         })
         return data
 
+# User profile
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'experience_level', 'created_at', 'updated_at']
+        read_only_fields = ['email', 'updated_at', 'created_at']
+        
+
 class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -51,3 +59,4 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
         if value not in ['básico', 'intermedio', 'avanzado']:
             raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
         return value
+

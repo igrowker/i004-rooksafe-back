@@ -139,6 +139,7 @@ SIMPLE_JWT = {
     'SIGNING_KEY': 'SECRET_KEY',                    #Clave secreta para firmar tokens. Almacenar en variables de entorno o servicio de gestion secreto 
                                                     #como AWS Secret Manager o Kubernetes Secrets
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
