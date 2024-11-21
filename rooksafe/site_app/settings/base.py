@@ -40,7 +40,9 @@ BASE_APPS = [
 LOCAL_APPS = [
     'site_app',
     'apps.users',
-    
+    'apps.Evaluations',
+    'apps.educationContent',
+
 ]
 
 THIRD_APPS = [
@@ -59,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'site_app.urls'
@@ -138,7 +141,9 @@ SIMPLE_JWT = {
     'SIGNING_KEY': 'SECRET_KEY',                    #Clave secreta para firmar tokens. Almacenar en variables de entorno o servicio de gestion secreto 
                                                     #como AWS Secret Manager o Kubernetes Secrets
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True

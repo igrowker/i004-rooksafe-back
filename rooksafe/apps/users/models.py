@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
-from django.conf import settings  # Asegúrate de importar settings
+from django.conf import settings
+
+from rest_framework import serializers
+
 
 # Create your models here.
 # Tabla: users
@@ -40,7 +43,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=64)
     experience_level = models.CharField(max_length=12, choices=[('básico', 'Básico'),('intermedio', 'Intermedio'),('avanzado','Avanzado')], default="básico")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -56,6 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name
 
+
 class Simulation(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Usa AUTH_USER_MODEL
     investment_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -66,3 +70,14 @@ class Simulation(models.Model):
 
     def __str__(self):
         return f"Simulation {self.id} for {self.user.username}"
+
+class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['experience_level']
+
+    def validate_experience_level(self, value):
+        if value not in ['básico', 'intermedio', 'avanzado']:
+            raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
+        return value
+

@@ -44,6 +44,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+
 class SimulationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Simulation
@@ -54,3 +55,23 @@ class SimulationSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("El monto de inversión debe ser mayor que cero.")
         return value
+
+# User profile
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'experience_level', 'created_at', 'updated_at']
+        read_only_fields = ['email', 'updated_at', 'created_at']
+        
+
+class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['experience_level']
+
+    def validate_experience_level(self, value):
+        if value not in ['básico', 'intermedio', 'avanzado']:
+            raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
+        return value
+
+

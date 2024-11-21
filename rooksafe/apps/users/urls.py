@@ -12,4 +12,8 @@ urlpatterns = [
     path('api/auth/protected/', ProtectedView.as_view(), name='protected'),
     path('api/simulator/start', StartSimulationView.as_view(), name='start_simulation'),
     path('api/simulator/status', SimulationStatusView.as_view(), name='simulation_status'),
+    path('api/user/profile/', UserProfileView.as_view(), name='user_profile'),
+    path('update-experience/', UpdateExperienceLevelView.as_view(), name='update_experience_level'),
+ 
+
 ]
