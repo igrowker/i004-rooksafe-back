@@ -69,7 +69,7 @@ class Simulation(models.Model):
     performance_data = models.JSONField(default=dict)
 
     def __str__(self):
-        return f"Simulation {self.id} for {self.user.username}"
+        return f"Simulation {self.id} for {self.user.username}" 
 
 class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
     class Meta:
