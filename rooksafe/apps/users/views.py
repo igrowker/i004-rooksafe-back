@@ -5,9 +5,13 @@ from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, SimulationSerializer
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, SimulationSerializer , AssetSerializer
 from .models import Simulation
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
+from faker import Faker
+import random
+from django.views.decorators.csrf import csrf_exempt
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -142,4 +146,43 @@ class UpdateExperienceLevelView(APIView):
                 'message': 'Experience level updated successfully!',
                 'experience_level': serializer.data['experience_level']
             }, status=status.HTTP_200_OK)
+        
+#Ruta para crear Activo financiero
+class CreateAsset(APIView):
+    def post(self, request):
+        fake = Faker()
+        asset_type = random.choice(['actions', 'crypto', 'commodity', 'forex'])
+        name = None
+        
+        if asset_type == 'actions':
+            name = fake.company()
+        elif asset_type == 'crypto':
+            name = fake.word() + "-Coin"
+        elif asset_type == 'forex' :
+            name = fake.word() + "-" + fake.currency_code()
+        elif asset_type == 'commodity':
+            name = fake.word()
 
+        print("name generado  " + name)
+        asset_data = {
+            'name': name ,
+            'asset_type': asset_type,
+            'current_value': fake.random_number(digits=5),
+            'market_cap': fake.random_number(digits=10),
+            'volume': fake.random_number(digits=8),
+        }
+
+        # Usar el serializer para crear el activo
+        asset_serializer = AssetSerializer(data=asset_data)
+        if asset_serializer.is_valid():
+            asset = asset_serializer.save()  # Crear el activo financiero
+            # Responder con un mensaje de éxito y los datos del activo creado
+            return Response({
+                'message': f'Activo "{name}" creado exitosamente.',
+                'asset': asset_serializer.data
+            }, status=status.HTTP_201_CREATED)
+
+        # Si el serializer no es válido, responder con los errores
+        return Response(asset_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    

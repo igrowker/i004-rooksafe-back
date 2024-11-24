@@ -14,6 +14,5 @@ urlpatterns = [
     path('api/simulator/status', SimulationStatusView.as_view(), name='simulation_status'),
     path('api/user/profile/', UserProfileView.as_view(), name='user_profile'),
     path('update-experience/', UpdateExperienceLevelView.as_view(), name='update_experience_level'),
- 
-
+    path('asset/create/', CreateAsset.as_view(), name='create_asset_with_price_history'),
 ]

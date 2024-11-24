@@ -69,7 +69,7 @@ class Simulation(models.Model):
     performance_data = models.JSONField(default=dict)
 
     def __str__(self):
-        return f"Simulation {self.id} for {self.user.username}" 
+        return f"Simulation {self.id} for {self.user.username}"
 
 class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,3 +81,29 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
         return value
 
+
+class Asset(models.Model):
+
+    TYPE_CHOICES = [
+        ('stock', 'Acción'),
+        ('crypto', 'Criptomoneda'),
+        ('commodity', 'Comodidad'),
+        ('forex', 'Forex'),
+    ]
+
+    name = models.CharField(max_length=200)  # Nombre del activo, por ejemplo "Bitcoin", "AAPL"
+    asset_type = models.CharField(max_length=20, choices=TYPE_CHOICES)  # Tipo de activo (acción, cripto, etc.)
+    current_value = models.DecimalField(max_digits=15, decimal_places=2)  # Valor actual del activo
+    previous_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Valor anterior para comparaciones
+    market_cap = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)  # Capitalización de mercado
+    volume = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Volumen de negociación
+    created_at = models.DateTimeField(auto_now_add=True)  # Fecha de creación del registro
+    updated_at = models.DateTimeField(auto_now=True)  # Fecha de última actualización
+    is_active = models.BooleanField(default=True)  # Si el activo está activo o no en la plataforma
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        verbose_name = 'Activo'
+        verbose_name_plural = 'Activos'
