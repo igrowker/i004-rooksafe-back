@@ -5,17 +5,6 @@ from django.conf import settings
 from rest_framework import serializers
 
 
-# Create your models here.
-# Tabla: users
-# id: INT (Primary Key)
-# name: VARCHAR
-# email: VARCHAR (Unique)
-# password: VARCHAR
-# experience_level: ENUM('básico', 'intermedio', 'avanzado')
-# created_at: TIMESTAMP
-# updated_at: TIMESTAMP
-
-
 class UserManager(BaseUserManager):
     def _create_user(self, name, email, password, experience_level, is_staff, is_superuser, **extra_fields):
         user = self.model(
