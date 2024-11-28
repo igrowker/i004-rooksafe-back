@@ -3,7 +3,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User
 from .models import Simulation
-
+from .models import Asset
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -75,3 +75,7 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
         return value
 
 
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ['id', 'name', 'asset_type', 'current_value', 'market_cap', 'volume']

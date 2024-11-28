@@ -5,17 +5,6 @@ from django.conf import settings
 from rest_framework import serializers
 
 
-# Create your models here.
-# Tabla: users
-# id: INT (Primary Key)
-# name: VARCHAR
-# email: VARCHAR (Unique)
-# password: VARCHAR
-# experience_level: ENUM('básico', 'intermedio', 'avanzado')
-# created_at: TIMESTAMP
-# updated_at: TIMESTAMP
-
-
 class UserManager(BaseUserManager):
     def _create_user(self, name, email, password, experience_level, is_staff, is_superuser, **extra_fields):
         user = self.model(
@@ -40,7 +29,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=64)
+    password = models.CharField(max_length=250)
     experience_level = models.CharField(max_length=12, choices=[('básico', 'Básico'),('intermedio', 'Intermedio'),('avanzado','Avanzado')], default="básico")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -50,7 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name', 'experience_level']
+    REQUIRED_FIELDS = 'name'
 
     class Meta:
         verbose_name = 'Usuario'
@@ -81,3 +70,29 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
         return value
 
+
+class Asset(models.Model):
+
+    TYPE_CHOICES = [
+        ('stock', 'Acción'),
+        ('crypto', 'Criptomoneda'),
+        ('commodity', 'Comodidad'),
+        ('forex', 'Forex'),
+    ]
+
+    name = models.CharField(max_length=200)  # Nombre del activo, por ejemplo "Bitcoin", "AAPL"
+    asset_type = models.CharField(max_length=20, choices=TYPE_CHOICES)  # Tipo de activo (acción, cripto, etc.)
+    current_value = models.DecimalField(max_digits=15, decimal_places=2)  # Valor actual del activo
+    previous_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Valor anterior para comparaciones
+    market_cap = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)  # Capitalización de mercado
+    volume = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Volumen de negociación
+    created_at = models.DateTimeField(auto_now_add=True)  # Fecha de creación del registro
+    updated_at = models.DateTimeField(auto_now=True)  # Fecha de última actualización
+    is_active = models.BooleanField(default=True)  # Si el activo está activo o no en la plataforma
+
+    def __str__(self):
+        return f"{self.name}"
+
+    class Meta:
+        verbose_name = 'Activo'
+        verbose_name_plural = 'Activos'
