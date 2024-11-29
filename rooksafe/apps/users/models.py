@@ -51,7 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Simulation(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Usa AUTH_USER_MODEL
-    investment_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    investment_amount = models.FloatField()
     asset_type = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default='active')
