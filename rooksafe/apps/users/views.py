@@ -47,35 +47,21 @@ class LoginView(TokenObtainPairView):
 
 
 class StartSimulationView(APIView):
-    permission_classes = [IsAuthenticated]  # Asegura que solo usuarios autenticados accedan a esta vista
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         """Inicia una nueva simulación de inversión."""
-        serializer = SimulationSerializer(data=request.data)
+        serializer = SimulationSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
-            # Guardar la simulación
             simulation = serializer.save(user=request.user)
-
-            # Inicializar datos de rendimiento ficticio
-            self.initialize_performance_data(simulation)
-
             return Response({
                 "message": "Simulación creada",
-                "simulation_id": simulation.id
+                "simulation_id": simulation.id,
+                "performance_data": simulation.performance_data 
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def initialize_performance_data(self, simulation):
-        """Inicializa los datos de rendimiento para la simulación."""
-        simulation.performance_data = {
-            "initial_investment": simulation.investment_amount,
-            "current_value": simulation.investment_amount,  # Inicialmente igual al monto invertido
-            "fluctuations": []  # Aquí puedes añadir lógica para simular fluctuaciones
-        }
-        simulation.save()  # Guarda los cambios en la simulación
-
 
 class SimulationStatusView(APIView):
     permission_classes = [IsAuthenticated]  # Asegura que solo usuarios autenticados accedan a esta vista

@@ -30,6 +30,13 @@ class Command(BaseCommand):
             for _ in range(5):
                 investment_amount = round(random.uniform(1000, 100000), 2)
                 asset_type = random.choice(['stock', 'crypto', 'commodity', 'forex'])
+                fluctuations = [round(random.uniform(-0.1, 0.1), 2) for _ in range(10)]
+                current_value = investment_amount
+
+                # Aplicar fluctuaciones al valor inicial
+                for fluctuation in fluctuations:
+                    current_value += current_value * fluctuation
+                current_value = round(current_value, 2)
 
                 Simulation.objects.create(
                     user=user,
@@ -38,8 +45,8 @@ class Command(BaseCommand):
                     asset_type=asset_type,
                     performance_data={
                         'initial_investment': investment_amount,
-                        'current_value': investment_amount,
-                        'fluctuations': [round(random.uniform(-0.1, 0.1), 2) for _ in range(10)]
+                        'current_value': current_value,
+                        'fluctuations': fluctuations
                     }
                 )
 
