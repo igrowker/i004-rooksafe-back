@@ -62,7 +62,7 @@ class Simulation(models.Model):
         Wallet, 
         on_delete=models.CASCADE, 
         related_name="simulations", 
-        limit_choices_to={"is_active": True}  # Optional: Enforce active wallets
+        limit_choices_to={"user__is_active": True}  # Optional: Enforce active wallets
     )
     investment_amount = models.FloatField()
     asset_type = models.CharField(max_length=100)
