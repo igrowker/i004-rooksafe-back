@@ -185,4 +185,49 @@ class CreateAsset(APIView):
         # Si el serializer no es válido, responder con los errores
         return Response(asset_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    
+class WalletStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        wallet = user.wallet
+        simulations = wallet.simulations.all()
+        transactions = wallet.transactions.all()
+
+        # Calculate the total current value of all simulations
+        total_simulation_value = sum(
+            sim.performance_data.get("current_value", 0) for sim in simulations
+        )
+
+        # Prepare wallet and simulation data
+        wallet_data = {
+            "balance": wallet.balance,
+            "total_simulation_value": total_simulation_value,
+            "total_portfolio_value": wallet.balance + total_simulation_value,
+        }
+
+        transaction_history = [
+            {
+                "type": txn.type,
+                "amount": txn.amount,
+                "created_at": txn.created_at,
+            }
+            for txn in transactions
+        ]
+
+        simulation_data = [
+            {
+                "id": sim.id,
+                "investment_amount": sim.investment_amount,
+                "asset_type": sim.asset_type,
+                "current_value": sim.performance_data.get("current_value"),
+                "status": sim.status,
+            }
+            for sim in simulations
+        ]
+
+        return Response({
+            "wallet": wallet_data,
+            "transactions": transaction_history,
+            "simulations": simulation_data,
+        }, status=status.HTTP_200_OK)

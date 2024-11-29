@@ -1,9 +1,7 @@
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User
-from .models import Simulation
-from .models import Asset
+from .models import *
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -79,3 +77,18 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ['id', 'name', 'asset_type', 'current_value', 'market_cap', 'volume']
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = ['balance', 'created_at', 'updated_at']
+
+class SimulationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Simulation
+        fields = ['investment_amount', 'asset_type', 'performance_data', 'status']
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['type', 'amount', 'created_at']
