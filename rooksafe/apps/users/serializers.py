@@ -46,7 +46,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class SimulationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Simulation
-        fields = ['investment_amount', 'asset_type']
+        fields = ['investment_amount', 'asset_type', 'status', 'performance_data']
 
     def validate_investment_amount(self, value):
         """Validar que el monto de inversión sea positivo."""
@@ -82,11 +82,6 @@ class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
         fields = ['balance', 'created_at', 'updated_at']
-
-class SimulationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Simulation
-        fields = ['investment_amount', 'asset_type', 'performance_data', 'status']
 
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
