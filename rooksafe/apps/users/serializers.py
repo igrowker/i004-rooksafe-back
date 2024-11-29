@@ -48,6 +48,13 @@ class SimulationSerializer(serializers.ModelSerializer):
         model = Simulation
         fields = ['user', 'wallet', 'investment_amount', 'asset_type', 'performance_data']
 
+    def create(self, validated_data):
+        # Ensure wallet is included in validated_data or associate it if missing
+        user = validated_data.get('user')
+        wallet, created = Wallet.objects.get_or_create(user=user)
+        validated_data['wallet'] = wallet
+        return super().create(validated_data)
+    
     def validate_investment_amount(self, value):
         """Validar que el monto de inversión sea positivo."""
         if value <= 0:
