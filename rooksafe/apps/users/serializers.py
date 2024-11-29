@@ -86,7 +86,7 @@ class SimulationSerializer(serializers.ModelSerializer):
         }
 
         simulation.save()
-
+    
     def validate_investment_amount(self, value):
         """Validar que el monto de inversión sea positivo."""
         if value <= 0:

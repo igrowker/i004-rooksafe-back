@@ -63,29 +63,6 @@ class StartSimulationView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class SimulationStatusView(APIView):
-    permission_classes = [IsAuthenticated]  # Asegura que solo usuarios autenticados accedan a esta vista
-
-    def get(self, request):
-        """Consulta el estado de las simulaciones del usuario."""
-        user_simulations = Simulation.objects.filter(user=request.user)
-        simulation_data = self.get_simulation_data(user_simulations)
-
-        return Response({"simulations": simulation_data}, status=status.HTTP_200_OK)
-
-    def get_simulation_data(self, simulations):
-        """Recopila datos de las simulaciones en formato adecuado."""
-        return [
-            {
-                "id": sim.id,
-                "investment_amount": sim.investment_amount,
-                "asset_type": sim.asset_type,
-                "status": sim.status,
-                "performance_data": sim.performance_data,
-            }
-            for sim in simulations
-        ]
-
     
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
