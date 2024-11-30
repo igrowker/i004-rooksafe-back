@@ -4,9 +4,11 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils.dateparse import parse_datetime
 from apps.finnhub.services.finnhub_service import FinnhubService
+from apps.finnhub.services.candle_generator import CandleGenerator
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -61,3 +63,27 @@ def fetch_graph_data(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+#Premium Version       
+def get_candles(request, symbol, days):
+    try:
+        # Initialize FinnhubService
+        finnhub_service = FinnhubService()
+
+        # Fetch stock data
+        candles = finnhub_service.fetch_stock_data(symbol, days)
+
+        return JsonResponse({'status': 'success', 'data': candles}, status=200)
+    except ValueError as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+def stock_candles_api(request, symbol):
+    """
+    API endpoint to fetch approximate candlestick data using live quotes.
+    """
+    try:
+        days = 1 #This int give 1 day to take the ohlc
+        candle_generator = CandleGenerator()
+        candles = candle_generator.approximate_candles(symbol, days)
+        return JsonResponse({'status': 'success', 'data': candles}, status=200)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

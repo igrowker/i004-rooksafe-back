@@ -2,7 +2,9 @@ import finnhub
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from apps.users.models import User
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.http import JsonResponse
+
 
 class FinnhubService:
     
@@ -25,34 +27,32 @@ class FinnhubService:
         except Exception as e:
             raise ValueError(f"Error fetching crypto quote for {symbol}: {e}")
 
-        
-    def fetch_stock_data(self, symbol):
+    #Premium version    
+    def fetch_stock_data(self, symbol, days):
         """
-        Fetch the latest stock quote for a given symbol.
+        Fetch stock data from Finnhub for a given number of days.
         """
+        end_time = datetime.now()  # Current time
+        start_time = end_time - timedelta(days=days)  # Calculate start time based on days
 
-        try:
-            # Fetch current stock quote
-            response = self.client.quote(symbol)
+        # Convert to Unix timestamps
+        start_unix = int(start_time.timestamp())
+        end_unix = int(end_time.timestamp())
 
-            # Check if the response is valid
-            if response.get('s') != 'ok':
-                raise ValueError("Error fetching stock quote from Finnhub")
+        # Fetch historical data from Finnhub
+        response = self.client.stock_candles(symbol, 'D', start_unix, end_unix)  # 'D' = Daily candles
 
-            # Extract and format the data (you can return this in any structure you prefer)
-            quote_data = {
-                'symbol': symbol,
-                'current_price': response['c'],  # Current price
-                'high': response['h'],  # High price of the day
-                'low': response['l'],   # Low price of the day
-                'open': response['o'],  # Open price of the day
-                'previous_close': response['pc'],  # Previous close price
-            }
+        # Parse response
+        if response['s'] != 'ok':
+            raise ValueError("Error fetching data from Finnhub")
 
-            return quote_data
+        # Prepare data for frontend
+        data = [
+            {'time': datetime.fromtimestamp(ts).isoformat(), 'open': o, 'high': h, 'low': l, 'close': c, 'volume': v}
+            for ts, o, h, l, c, v in zip(response['t'], response['o'], response['h'], response['l'], response['c'], response['v'])
+        ]
 
-        except Exception as e:
-            raise ValueError(f"Error fetching stock quote for {symbol}: {e}")
+        return data
 
 
     def simulate_investment(self, symbol, user_id, initial_investment=1000):
@@ -87,3 +87,4 @@ class FinnhubService:
             'risk_factor': risk_factor,
             'experience_level': experience_level
         }
+
