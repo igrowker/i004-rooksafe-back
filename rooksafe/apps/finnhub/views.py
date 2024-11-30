@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.http import JsonResponse
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
@@ -17,12 +18,17 @@ def fetch_quotes(request):
     Fetch quotes and simulate investments based on user experience level.
     """
     symbol = request.GET.get('symbol')
-    initial_investment = float(request.GET.get('investment', 1000))  # Default to $1000
+    
+    try:
+        initial_investment = float(request.GET.get('investment', 1000))
+    except ValueError:
+        return JsonResponse({'error': 'Invalid investment value'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validar que la inversión sea mayor a 0
+    if initial_investment <= 0:
+        return JsonResponse({'error': 'Investment must be greater than 0'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not symbol:
-        return JsonResponse({'error': 'Symbol is required'}, status=400)
-
-     # Get the logged-in user's ID
+    # Get the logged-in user's ID
     user = request.user  # This gives you the User instance
     user_id = user.id  # ID of the user
 
@@ -31,11 +37,13 @@ def fetch_quotes(request):
         # Fetch simulation based on user ID
         simulation_result = service.simulate_investment(symbol, user_id, initial_investment)
     except ValueError as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return JsonResponse({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     return JsonResponse({'simulation': simulation_result})
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def fetch_graph_data(request):
     """
     Fetch and return data for a graph based on user-specified time range.
@@ -63,7 +71,9 @@ def fetch_graph_data(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-#Premium Version       
+#Premium Version
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])       
 def get_candles(request, symbol, days):
     try:
         # Initialize FinnhubService
@@ -76,6 +86,9 @@ def get_candles(request, symbol, days):
     except ValueError as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])    
 def stock_candles_api(request, symbol):
     """
     API endpoint to fetch approximate candlestick data using live quotes.

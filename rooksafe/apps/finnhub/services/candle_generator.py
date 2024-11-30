@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from .finnhub_service import FinnhubService  # Assuming FinnhubService is in the same services folder
 
 class CandleGenerator:
+    
     """Helper to generate candle-like data from live quotes."""
     
     def __init__(self):
