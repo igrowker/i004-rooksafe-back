@@ -52,7 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Wallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
-    balance = models.DecimalField(max_digits=15, decimal_places=2, default=0.0)
+    balance = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -82,7 +82,7 @@ class Simulation(models.Model):
 class Transaction(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
     type = models.CharField(max_length=50, choices=[("investment", "Investment"), ("withdrawal", "Withdrawal")])
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    amount = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
     def clean(self):
         if self.amount <= 0:
@@ -110,10 +110,10 @@ class Asset(models.Model):
 
     name = models.CharField(max_length=200)  # Nombre del activo, por ejemplo "Bitcoin", "AAPL"
     asset_type = models.CharField(max_length=20, choices=TYPE_CHOICES)  # Tipo de activo (acción, cripto, etc.)
-    current_value = models.DecimalField(max_digits=15, decimal_places=2)  # Valor actual del activo
-    previous_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Valor anterior para comparaciones
-    market_cap = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)  # Capitalización de mercado
-    volume = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Volumen de negociación
+    current_value = models.FloatField()  # Valor actual del activo
+    previous_value = models.FloatField( null=True, blank=True)  # Valor anterior para comparaciones
+    market_cap = models.FloatField(null=True, blank=True)  # Capitalización de mercado
+    volume = models.FloatField(null=True, blank=True)  # Volumen de negociación
     created_at = models.DateTimeField(auto_now_add=True)  # Fecha de creación del registro
     updated_at = models.DateTimeField(auto_now=True)  # Fecha de última actualización
     is_active = models.BooleanField(default=True)  # Si el activo está activo o no en la plataforma  # Si el activo está activo o no en la plataforma

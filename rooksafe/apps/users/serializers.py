@@ -61,6 +61,7 @@ class SimulationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("El monto de inversión debe ser mayor que cero.")
         return value
 
+
 # User profile
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:

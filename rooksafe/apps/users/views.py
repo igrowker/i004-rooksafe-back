@@ -6,12 +6,12 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, SimulationSerializer , AssetSerializer
-from .models import Simulation
+from .models import Simulation, Wallet
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
 from faker import Faker
 import random
 from django.views.decorators.csrf import csrf_exempt
-
+from django.shortcuts import get_object_or_404
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -54,10 +54,21 @@ class StartSimulationView(APIView):
         serializer = SimulationSerializer(data=request.data)
 
         if serializer.is_valid():
-            # Guardar la simulación
-            simulation = serializer.save(user=request.user)
 
-            # Inicializar datos de rendimiento ficticio
+            wallet = get_object_or_404(Wallet, user = request.user)
+            investment_amount = serializer.validated_data['investment_amount']
+
+            if wallet.balance < investment_amount:
+                return Response({'message': 'No tienes suficiente fondos para invertir'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            wallet -= investment_amount
+            wallet.save()
+
+            # Guardar la simulación
+            simulation = serializer.save(user=request.user, wallet = wallet)
+            
+
+            # Inicializar datos de rendimiento ficticio self
             self.initialize_performance_data(simulation)
 
             return Response({
@@ -72,7 +83,7 @@ class StartSimulationView(APIView):
         simulation.performance_data = {
             "initial_investment": simulation.investment_amount,
             "current_value": simulation.investment_amount,  # Inicialmente igual al monto invertido
-            "fluctuations": []  # Aquí puedes añadir lógica para simular fluctuaciones
+            "fluctuations": [[round(random.uniform(-0.1, 0.1), 2) for _ in range(11)]]  # Aquí puedes añadir lógica para simular fluctuaciones
         }
         simulation.save()  # Guarda los cambios en la simulación
 
@@ -196,14 +207,14 @@ class WalletStatusView(APIView):
 
         # Calculate the total current value of all simulations
         total_simulation_value = sum(
-            sim.performance_data.get("current_value", 0) for sim in simulations
+            float(sim.performance_data.get("current_value", 0)) for sim in simulations
         )
 
         # Prepare wallet and simulation data
         wallet_data = {
-            "balance": wallet.balance,
+            "balance": float(wallet.balance),
             "total_simulation_value": total_simulation_value,
-            "total_portfolio_value": wallet.balance + total_simulation_value,
+            "total_portfolio_value": float(wallet.balance) + total_simulation_value,
         }
 
         transaction_history = [
@@ -231,3 +242,20 @@ class WalletStatusView(APIView):
             "transactions": transaction_history,
             "simulations": simulation_data,
         }, status=status.HTTP_200_OK)
+
+
+# Add money to wallet
+class AddMoneyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get('amount')
+        
+        if amount is None or float(amount) <= 0:
+            return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        wallet = get_object_or_404(Wallet, user = request.user)
+        wallet.balance += float(amount)
+        wallet.save()
+
+        return Response({'message': 'Nuevo monto añadido', 'balance' : wallet.balance}, status=status.HTTP_200_OK)
