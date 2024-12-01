@@ -65,16 +65,16 @@ jobs:
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
 
     steps:
-      - name: Delete Previous 
+      - name: cleanup old checkout  
         run: |
-           docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+        chmod +w -R ${GITHUB_WORKSPACE}
 
       - name: Checkout
         uses: actions/checkout@v4
       
       - name: Delete Previous 
         run: |
-           docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+          docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
 
       - name: Pull and Deploy
         run: |
