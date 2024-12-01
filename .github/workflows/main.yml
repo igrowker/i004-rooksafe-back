@@ -65,6 +65,10 @@ jobs:
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
 
     steps:
+      - name: Delete Previous 
+        run: |
+           docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+
       - name: Checkout
         uses: actions/checkout@v4
       
