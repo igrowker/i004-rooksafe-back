@@ -59,21 +59,21 @@ jobs:
       DB_USER: '${{ secrets.DB_USER }}'
       DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
       SECRET_KEY: '${{ secrets.SECRET_KEY }}'
-      
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       
       - name: Delete Previous 
-      - run: |
+        run: |
            docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
 
       - name: Pull and Deploy
-      - run: |
+        run: |
           docker-compose pull && docker-compose up -d      
       
       - name: Post Deploy Tasks
-      - run: |
+        run: |
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py collectstatic 
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations users
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations Evaluations
