@@ -38,7 +38,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
     working_dir: /usr/share/app
     volumes:
-      - ./rooksafe/site_app/static:/usr/share/app/static
+      - ./rooksafe/site_app/static:/usr/share/app/site_app/static
+#    ports:
+#      - "8889:3000"
     depends_on:
       db:
           condition: service_healthy
