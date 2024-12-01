@@ -65,9 +65,6 @@ jobs:
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
 
     steps:
-      - name: cleanup old checkout  
-        run: |
-        chmod +w -R $GITHUB_WORKSPACE
 
       - name: Checkout
         uses: actions/checkout@v4
