@@ -105,6 +105,9 @@ def stock_candles_api(request, symbol):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])  
 #Cache the response for eco fetching
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])  
+#Cache the response for eco fetching
 def get_symbols(request):
     """API endpoint to fetch stock symbols dynamically from Finnhub."""
     try:
