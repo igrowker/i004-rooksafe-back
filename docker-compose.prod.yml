@@ -1,24 +1,4 @@
 services:
-  db:
-    image: postgres:15.1-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-      - PGUSER=${DB_USER}
-    volumes:
-      - pgdata:/var/lib/postgresql/data/
-    ports:
-      - "5432:5432"
-    healthcheck:
-        test: ["CMD-SHELL", "pg_isready", "-d", "${DB_NAME}"]
-        interval: 30s
-        timeout: 60s
-        retries: 5
-        start_period: 80s
-    networks:
-      - rooksafe
   rooksafe-back:
     build:
       context: .
@@ -38,9 +18,6 @@ services:
     working_dir: /usr/share/app
     volumes:
       - ./rooksafe/site_app/static:/usr/share/app/site_app/static
-    depends_on:
-      db:
-          condition: service_healthy
     networks:
       - rooksafe
   rooksafe-proxy:
@@ -57,8 +34,6 @@ services:
       - rooksafe-back
     networks:
       - rooksafe
-volumes:
-  pgdata:
 
 networks:
   rooksafe:
