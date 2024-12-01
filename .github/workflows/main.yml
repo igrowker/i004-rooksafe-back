@@ -19,15 +19,6 @@ on:
           - develop
           - devops-workflow
 
-env:
-  DB_HOST: '${{ secrets.DB_HOST }}'
-  DB_PORT: '${{ secrets.DB_PORT }}'
-  DB_NAME: '${{ secrets.DB_NAME }}'
-  DB_USER: '${{ secrets.DB_USER }}'
-  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
-  SECRET_KEY: '${{ secrets.SECRET_KEY }}'
-
-
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -58,9 +49,17 @@ jobs:
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:${{ github.sha }}
 
-   deploy:
+  deploy:
     needs: build-and-test
     runs-on:  [self-hosted, rooksafe-r2]
+    env:
+      DB_HOST: '${{ secrets.DB_HOST }}'
+      DB_PORT: '${{ secrets.DB_PORT }}'
+      DB_NAME: '${{ secrets.DB_NAME }}'
+      DB_USER: '${{ secrets.DB_USER }}'
+      DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+      SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+      
     steps:
       - name: Checkout
         uses: actions/checkout@v4
