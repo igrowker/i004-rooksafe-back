@@ -18,6 +18,7 @@ on:
         options:
           - develop
           - devops-workflow
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -47,3 +48,42 @@ jobs:
           tags: |
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-test
+    runs-on:  [self-hosted, rooksafe-r2]
+    env:
+      DB_HOST: '${{ secrets.DB_HOST }}'
+      DB_PORT: '${{ secrets.DB_PORT }}'
+      DB_NAME: '${{ secrets.DB_NAME }}'
+      DB_USER: '${{ secrets.DB_USER }}'
+      DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+      SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+      DJ_USERNAME: '${{ secrets.DJ_USERNAME }}'
+      DJ_PASSWORD: '${{ secrets.DJ_PASSWORD }}'
+      DJ_EMAIL: '${{ secrets.DJ_EMAIL }}'
+      EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
+
+    steps:
+      - name: Delete Previous 
+        run: |
+           docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Delete Previous 
+        run: |
+           docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+
+      - name: Pull and Deploy
+        run: |
+          docker-compose pull && docker-compose up -d      
+      
+      - name: Post Deploy Tasks
+        run: |
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py collectstatic 
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations users
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations Evaluations
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations educationContent
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py migrate
