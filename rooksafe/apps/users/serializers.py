@@ -1,9 +1,7 @@
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import User
-from .models import Simulation
-from .models import Asset
+from .models import *
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -48,13 +46,21 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class SimulationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Simulation
-        fields = ['investment_amount', 'asset_type']
+        fields = ['user', 'wallet', 'investment_amount', 'asset_type', 'performance_data']
 
+    def create(self, validated_data):
+        # Ensure wallet is included in validated_data or associate it if missing
+        user = validated_data.get('user')
+        wallet, created = Wallet.objects.get_or_create(user=user)
+        validated_data['wallet'] = wallet
+        return super().create(validated_data)
+    
     def validate_investment_amount(self, value):
         """Validar que el monto de inversión sea positivo."""
         if value <= 0:
             raise serializers.ValidationError("El monto de inversión debe ser mayor que cero.")
         return value
+
 
 # User profile
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -79,3 +85,13 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ['id', 'name', 'asset_type', 'current_value', 'market_cap', 'volume']
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = ['balance', 'created_at', 'updated_at']
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['type', 'amount', 'created_at']

@@ -1,12 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 from django.conf import settings
-
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 
 
 class UserManager(BaseUserManager):
     def _create_user(self, name, email, password, experience_level, is_staff, is_superuser, **extra_fields):
+        extra_fields.setdefault("is_active", True)
         user = self.model(
             name=name,
             email=email,
@@ -16,8 +17,9 @@ class UserManager(BaseUserManager):
             **extra_fields
         )
         user.set_password(password)
-        user.save(using=self.db)
+        user.save(using=self._db)
         return user
+
 
     def create_user(self, name, email, password=None, experience_level='básico', **extra_fields):
         return self._create_user(name, email, password, experience_level, False, False, **extra_fields)
@@ -48,17 +50,43 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.name
 
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="wallet")
+    balance = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class Simulation(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  # Usa AUTH_USER_MODEL
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)  
+    wallet = models.ForeignKey(
+        Wallet, 
+        on_delete=models.CASCADE, 
+        related_name="simulations", 
+        limit_choices_to={"user__is_active": True}  # Optional: Enforce active wallets
+    )
     investment_amount = models.FloatField()
     asset_type = models.CharField(max_length=100)
+    performance_data = models.JSONField(default=dict)  
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default='active')
-    performance_data = models.JSONField(default=dict)
+
+    def clean(self):
+        if self.investment_amount <= 0:
+            raise ValidationError("Investment amount must be positive.")
 
     def __str__(self):
         return f"Simulation {self.id} for {self.user.username}"
+    
+    
+    
+class Transaction(models.Model):
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+    type = models.CharField(max_length=50, choices=[("investment", "Investment"), ("withdrawal", "Withdrawal")])
+    amount = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    def clean(self):
+        if self.amount <= 0:
+            raise ValidationError("Transaction amount must be positive.")
 
 class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,13 +110,13 @@ class Asset(models.Model):
 
     name = models.CharField(max_length=200)  # Nombre del activo, por ejemplo "Bitcoin", "AAPL"
     asset_type = models.CharField(max_length=20, choices=TYPE_CHOICES)  # Tipo de activo (acción, cripto, etc.)
-    current_value = models.DecimalField(max_digits=15, decimal_places=2)  # Valor actual del activo
-    previous_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Valor anterior para comparaciones
-    market_cap = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)  # Capitalización de mercado
-    volume = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)  # Volumen de negociación
+    current_value = models.FloatField()  # Valor actual del activo
+    previous_value = models.FloatField( null=True, blank=True)  # Valor anterior para comparaciones
+    market_cap = models.FloatField(null=True, blank=True)  # Capitalización de mercado
+    volume = models.FloatField(null=True, blank=True)  # Volumen de negociación
     created_at = models.DateTimeField(auto_now_add=True)  # Fecha de creación del registro
     updated_at = models.DateTimeField(auto_now=True)  # Fecha de última actualización
-    is_active = models.BooleanField(default=True)  # Si el activo está activo o no en la plataforma
+    is_active = models.BooleanField(default=True)  # Si el activo está activo o no en la plataforma  # Si el activo está activo o no en la plataforma
 
     def __str__(self):
         return f"{self.name}"

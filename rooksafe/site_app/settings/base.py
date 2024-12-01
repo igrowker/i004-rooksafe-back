@@ -45,6 +45,7 @@ LOCAL_APPS = [
     'apps.users',
     'apps.Evaluations',
     'apps.educationContent',
+    'apps.finnhub',
 
 ]
 
