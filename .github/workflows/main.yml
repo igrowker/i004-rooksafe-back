@@ -67,7 +67,7 @@ jobs:
     steps:
       - name: cleanup old checkout  
         run: |
-        chmod +w -R ${GITHUB_WORKSPACE}
+        chmod +w -R $GITHUB_WORKSPACE
 
       - name: Checkout
         uses: actions/checkout@v4
