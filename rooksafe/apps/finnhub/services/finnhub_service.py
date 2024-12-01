@@ -88,3 +88,11 @@ class FinnhubService:
             'experience_level': experience_level
         }
 
+    #Get Finnhub Symbols
+    def get_stock_symbols(self, exchange="US"):
+        """Fetch stock symbols for a specific exchange (e.g., US)."""
+        try:
+            symbols = self.client.stock_symbols(exchange)
+            return [{"symbol": sym["symbol"], "name": sym["description"]} for sym in symbols]
+        except Exception as e:
+            raise ValueError(f"Error fetching stock symbols: {e}")

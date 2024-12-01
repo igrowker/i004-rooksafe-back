@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,7 +7,9 @@ from datetime import datetime, timedelta
 from django.utils.dateparse import parse_datetime
 from apps.finnhub.services.finnhub_service import FinnhubService
 from apps.finnhub.services.candle_generator import CandleGenerator
+from django.core.cache import cache
 
+# Create your views here.
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -100,3 +100,21 @@ def stock_candles_api(request, symbol):
         return JsonResponse({'status': 'success', 'data': candles}, status=200)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+#Cache the response for eco fetching
+def get_symbols(request):
+    """API endpoint to fetch stock symbols dynamically from Finnhub."""
+    try:
+        exchange = request.GET.get("exchange", "US")
+        cache_key = f"symbols_{exchange}"
+
+        # Check if symbols are in cache
+        symbols = cache.get(cache_key)
+        if not symbols:
+            service = FinnhubService()
+            symbols = service.get_stock_symbols(exchange)
+            cache.set(cache_key, symbols, timeout=3600)  # Cache for 1 hour
+
+        return JsonResponse({"status": "success", "data": symbols})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
