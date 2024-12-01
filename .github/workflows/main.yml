@@ -59,6 +59,10 @@ jobs:
       DB_USER: '${{ secrets.DB_USER }}'
       DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
       SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+      DJ_USERNAME: '${{ secrets.DJ_USERNAME }}'
+      DJ_PASSWORD: '${{ secrets.DJ_PASSWORD }}'
+      DJ_EMAIL: '${{ secrets.DJ_EMAIL }}'
+      EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
 
     steps:
       - name: Checkout
