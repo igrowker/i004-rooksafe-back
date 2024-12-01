@@ -101,6 +101,9 @@ def stock_candles_api(request, symbol):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])  
 #Cache the response for eco fetching
 def get_symbols(request):
     """API endpoint to fetch stock symbols dynamically from Finnhub."""
@@ -108,12 +111,21 @@ def get_symbols(request):
         exchange = request.GET.get("exchange", "US")
         cache_key = f"symbols_{exchange}"
 
+        if not exchange: 
+            return JsonResponse({"status": "error", "message": "Exchange parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Check if symbols are in cache
-        symbols = cache.get(cache_key)
+        try: 
+            symbols = cache.get(cache_key) 
+        except Exception as e: 
+            return JsonResponse({"status": "error", "message": f"Cache retrieval error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         if not symbols:
-            service = FinnhubService()
-            symbols = service.get_stock_symbols(exchange)
-            cache.set(cache_key, symbols, timeout=3600)  # Cache for 1 hour
+            try: 
+                service = FinnhubService() 
+                symbols = service.get_stock_symbols(exchange) 
+            except Exception as e: 
+                return JsonResponse({"status": "error", "message": f"Error fetching symbols from Finnhub: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)  # Cache for 1 hour
 
         return JsonResponse({"status": "success", "data": symbols})
     except Exception as e:
