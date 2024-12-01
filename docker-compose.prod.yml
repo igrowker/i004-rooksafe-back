@@ -17,7 +17,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
     working_dir: /usr/share/app
     volumes:
-      - ./rooksafe/site_app/static:/usr/share/app/site_app/static
+      - static:/usr/share/app/site_app/static
     networks:
       - rooksafe
   rooksafe-proxy:
@@ -29,11 +29,14 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/my_ginx.conf:/etc/nginx/sites-available/my_ginx.conf
-      - ./rooksafe/site_app/static:/app/static
+      - static:/app/static
     depends_on:
       - rooksafe-back
     networks:
       - rooksafe
+
+volumes:
+  static:
 
 networks:
   rooksafe:
