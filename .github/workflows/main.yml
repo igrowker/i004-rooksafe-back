@@ -75,7 +75,11 @@ jobs:
 
       - name: Pull and Deploy
         run: |
-          docker-compose pull && docker-compose up -d      
+          docker-compose pull && docker-compose up -d   
+
+      - name: Remove old Images
+        run: |
+          docker rmi $(docker images -f dangling=true -q )
       
       - name: Post Deploy Tasks
         run: |
