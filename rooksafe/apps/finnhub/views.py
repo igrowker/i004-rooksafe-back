@@ -131,3 +131,20 @@ def get_symbols(request):
         return JsonResponse({"status": "success", "data": symbols})
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def simulate_investment(request, symbol):
+    """
+    API endpoint to simulate an investment and update wallet.
+    """
+    user_id = request.user.id  # Assuming the user is authenticated
+    initial_investment = float(request.GET.get('amount', 1000))  # Default to 1000 if not provided
+
+    try:
+        finnhub_service = FinnhubService()
+        simulation_result = finnhub_service.simulate_investment(symbol, user_id, initial_investment)
+        return JsonResponse({'status': 'success', 'data': simulation_result})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

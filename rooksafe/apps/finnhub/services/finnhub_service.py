@@ -1,7 +1,7 @@
 import finnhub
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from apps.users.models import User
+from apps.users.models import User, Wallet, Transaction
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 
@@ -57,33 +57,56 @@ class FinnhubService:
 
     def simulate_investment(self, symbol, user_id, initial_investment=1000):
         """
-        Simulate investment based on user's experience level.
+        Simulate investment and update the wallet based on user's experience level.
         """
         try:
+            # Fetch user and related wallet
             user = User.objects.get(id=user_id)
-            experience_level = str(user.experience_level)
+            wallet = Wallet.objects.get(user=user)
+
+            # Fetch stock data
             quote = self.get_stock_quote(symbol)
             current_price = quote['c']  # Current price
             change_percent = quote['dp']  # Price change percentage
+        except Wallet.DoesNotExist:
+            raise ValueError("User wallet not found.")
+        except User.DoesNotExist:
+            raise ValueError("User not found.")
         except ValueError as e:
             raise ValueError(str(e))
 
-        
-        # Customize simulation based on experience level
-        if experience_level == 'Basico':
+        # Determine risk factor based on user's experience level
+        experience_level = str(user.experience_level)
+        if experience_level == 'básico':
             risk_factor = 0.5
-        elif experience_level == 'Intermedio':
+        elif experience_level == 'intermedio':
             risk_factor = 1.0
-        else:  # advanced
+        else:  # avanzado
             risk_factor = 1.5
 
-        # Simulate future value
+        # Simulate investment return
         simulated_return = initial_investment * (1 + (change_percent / 100) * risk_factor)
+        profit_or_loss = simulated_return - initial_investment
+
+        # Update the wallet balance
+        wallet.balance += profit_or_loss
+        wallet.save()
+
+        # Record the transaction
+        Transaction.objects.create(
+            wallet=wallet,
+            type="investment",
+            amount=profit_or_loss,
+        )
+
+        # Return simulation results
         return {
             'symbol': symbol,
             'current_price': current_price,
             'initial_investment': initial_investment,
             'simulated_return': round(simulated_return, 2),
+            'profit_or_loss': round(profit_or_loss, 2),
+            'new_balance': round(wallet.balance, 2),
             'risk_factor': risk_factor,
             'experience_level': experience_level
         }
