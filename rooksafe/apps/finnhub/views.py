@@ -66,7 +66,8 @@ def fetch_graph_data(request):
     # Call your service function with start_time
     try:
         finnhub_service = FinnhubService()
-        data = finnhub_service.fetch_stock_data(symbol, start_time)  # end_time is automatically handled
+        days = (datetime.now() - start_time).days
+        data = finnhub_service.fetch_stock_data(symbol, days)  # end_time is automatically handled
         return JsonResponse({'data': data})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -101,7 +102,7 @@ def stock_candles_api(request, symbol):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-#Cache the response for eco fetching
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])  
 #Cache the response for eco fetching
