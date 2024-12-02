@@ -42,26 +42,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-
-class SimulationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Simulation
-        fields = ['user', 'wallet', 'investment_amount', 'asset_type', 'performance_data']
-
-    def create(self, validated_data):
-        # Ensure wallet is included in validated_data or associate it if missing
-        user = validated_data.get('user')
-        wallet, created = Wallet.objects.get_or_create(user=user)
-        validated_data['wallet'] = wallet
-        return super().create(validated_data)
-    
-    def validate_investment_amount(self, value):
-        """Validar que el monto de inversión sea positivo."""
-        if value <= 0:
-            raise serializers.ValidationError("El monto de inversión debe ser mayor que cero.")
-        return value
-
-
 # User profile
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,11 +60,6 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
         return value
 
-
-class AssetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asset
-        fields = ['id', 'name', 'asset_type', 'current_value', 'market_cap', 'volume']
 
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:

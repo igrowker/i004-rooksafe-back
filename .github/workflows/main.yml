@@ -83,7 +83,7 @@ jobs:
       
       - name: Post Deploy Tasks
         run: |
-          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py collectstatic 
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py collectstatic --noinput
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations users
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations Evaluations
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations educationContent
