@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Wallet, Simulation, Transaction, Asset
+from .models import User, Wallet, Transaction
 
 class UserAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'email', 'experience_level', 'is_staff', 'is_superuser', 'is_active', 'created_at', 'updated_at')
@@ -12,12 +12,6 @@ class WalletAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'balance', 'created_at', 'updated_at')
     list_filter = ('created_at', 'updated_at')
     search_fields = ('user__name', 'user__email')
-
-
-class SimulationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'wallet', 'investment_amount', 'asset_type', 'status', 'created_at')
-    list_filter = ('asset_type', 'status', 'created_at')
-    search_fields = ('user__name', 'user__email', 'asset_type')
 
 class TransactionAdmin(admin.ModelAdmin):
     list_display = ('id', 'wallet', 'type', 'amount', 'created_at')
@@ -33,6 +27,4 @@ class AssetAdmin(admin.ModelAdmin):
 
 admin.site.register(User, UserAdmin)
 admin.site.register(Wallet, WalletAdmin)
-admin.site.register(Simulation, SimulationAdmin)
 admin.site.register(Transaction, TransactionAdmin)
-admin.site.register(Asset, AssetAdmin)
