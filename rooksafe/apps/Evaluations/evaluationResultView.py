@@ -49,11 +49,11 @@ class EvaluacionView(APIView):
         
         last_answer = respuestas[-1]
 
-        if last_answer in [1, 2]:
+        if last_answer in [1]:
             level = "básico"
-        elif last_answer == 3:
+        elif last_answer == 2:
             level = "intermedio"
-        elif last_answer in [4]:
+        elif last_answer in [3]:
             level = "avanzado"
         else:
             return JsonResponse({"error": f"Invalid value in 'respuestas'. Must be between 1 and 4."}, status=400)

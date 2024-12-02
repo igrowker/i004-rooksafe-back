@@ -7,5 +7,5 @@ urlpatterns = [
     #Premium Version   path('candles/<str:symbol>/<int:days>/', views.get_candles, name='stock_candles_api'),
     path('candles/<str:symbol>', views.stock_candles_api, name='stock_candles'),
     path('symbols', views.get_symbols, name='get_symbols'),
-    path('simulate/<str:symbol>/', views.simulate_investment, name='simulate_investment'),
+    path('simulate/<str:symbol>', views.simulate_investment, name='simulate_investment'),
 ]
