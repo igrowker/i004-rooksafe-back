@@ -94,3 +94,13 @@ class UpdateExperienceLevelSerializer(serializers.ModelSerializer):
         if value not in ['básico', 'intermedio', 'avanzado']:
             raise serializers.ValidationError("Invalid experience level. Must be 'básico', 'intermedio', or 'avanzado'.")
         return value
+
+class StockInvestment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    stock_symbol = models.CharField(max_length=10)  # Stock symbol (e.g., 'AAPL')
+    number_of_shares = models.FloatField()  # Number of shares the user owns
+    purchase_price = models.FloatField()  # The price at which the stock was bought
+    current_value = models.FloatField(default=0)  # Current value of the stock (calculated)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.stock_symbol}"
