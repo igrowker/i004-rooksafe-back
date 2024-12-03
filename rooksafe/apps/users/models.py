@@ -57,11 +57,30 @@ class Wallet(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     
+# class Transaction(models.Model):
+#     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
+#     type = models.CharField(max_length=50, choices=[("investment", "Investment"), ("withdrawal", "Withdrawal")])
+#     amount = models.FloatField()
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     def clean(self):
+#         if self.amount <= 0:
+#             raise ValidationError("Transaction amount must be positive.")
+
 class Transaction(models.Model):
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name="transactions")
-    type = models.CharField(max_length=50, choices=[("investment", "Investment"), ("withdrawal", "Withdrawal")])
+    type = models.CharField(max_length=50, choices=[
+        ("investment", "Investment"),
+        ("withdrawal", "Withdrawal"),
+        ("buy", "Buy"),
+        ("sell", "Sell")
+    ])
     amount = models.FloatField()
+    status = models.CharField(max_length=20, choices=[
+        ("pending", "Pending"),
+        ("completed", "Completed"),
+    ], default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
+
     def clean(self):
         if self.amount <= 0:
             raise ValidationError("Transaction amount must be positive.")
