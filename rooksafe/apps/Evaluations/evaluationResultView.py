@@ -40,7 +40,7 @@ LEVEL_MAPPING = {
             "Buscás generar rendimientos sensiblemente superiores al benchmark promedio de mercado.",
             "Para esto tomás mayores riesgos que se pueden traducir en importantes pérdidas de capital, pero sos consciente de eso."
         ],
-        "score_range": (46, 80),
+        "score_range": (80, 100),
     },
 }
 
