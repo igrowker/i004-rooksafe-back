@@ -25,4 +25,5 @@ urlpatterns = [
     path('api/users/', include('apps.users.urls')),     # User-related API routes
     path('api/education/', include('apps.educationContent.urls')),
     path('finnhub/', include('apps.finnhub.urls')),
+    path("yfinance/", include("apps.yahooFinance.urls")),
 ]

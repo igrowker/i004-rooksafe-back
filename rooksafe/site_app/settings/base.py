@@ -46,6 +46,7 @@ LOCAL_APPS = [
     'apps.Evaluations',
     'apps.educationContent',
     'apps.finnhub',
+    'apps.yahooFinance',
 
 ]
 
@@ -53,6 +54,8 @@ THIRD_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    'channels',
+    'channels_redis',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -151,3 +154,14 @@ SIMPLE_JWT = {
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Set Channels backend for WebSocket communication
+ASGI_APPLICATION = "site_app.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
