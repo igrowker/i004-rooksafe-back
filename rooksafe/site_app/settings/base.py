@@ -47,12 +47,16 @@ LOCAL_APPS = [
     'apps.educationContent',
     'apps.finnhub',
 
+    'apps.candles',
+
 ]
 
 THIRD_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    
+    'channels',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -151,3 +155,16 @@ SIMPLE_JWT = {
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Configurar Django Channels
+ASGI_APPLICATION = "site_app.asgi.application"
+
+# Configuración de Redis para WebSockets
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],  # Cambiar por Redis en tu entorno
+        },
+    },
+}
