@@ -5,11 +5,12 @@ from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
-from .models import Wallet
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, WalletSerializer
+from .models import Wallet, Transaction
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -92,6 +93,15 @@ class UpdateExperienceLevelView(APIView):
 class WalletStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        try:
+            wallet = Wallet.objects.get(user=request.user)
+        except Wallet.DoesNotExist:
+            return JsonResponse({"error":"Not found"}, status=404)
+        
+        serializer = WalletSerializer(wallet)
+        return JsonResponse(serializer.data, status=200)
+
 
 
 # Add money to wallet
@@ -108,4 +118,65 @@ class AddMoneyView(APIView):
         wallet.balance += float(amount)
         wallet.save()
 
-        return Response({'message': 'Nuevo monto añadido', 'balance' : wallet.balance}, status=status.HTTP_200_OK)
+        return JsonResponse({'message': 'Nuevo monto añadido', 'balance' : wallet.balance}, status=status.HTTP_200_OK)
+
+
+from django.db import transaction as db_transaction
+
+class BuyTransactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get("amount")
+
+        if not amount or float(amount) <= 0:
+            return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with db_transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(user=request.user)
+
+            if wallet.balance < float(amount):
+                return JsonResponse({"error": "Insufficient funds for this buy transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                transaction = Transaction.objects.create(wallet=wallet, type="buy", amount=float(amount), status="completed")
+            except Exception as e:
+                return JsonResponse({"error": f"Transaction creation failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return JsonResponse({"message": "Buy transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+
+
+class SellTransactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get("amount")
+
+        if not amount or float(amount) <= 0:
+            return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with db_transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(user=request.user)
+
+            transaction = Transaction.objects.create(wallet=wallet, type="sell", amount=float(amount), status="completed")
+
+        return JsonResponse({"message": "Sell transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+
+class WithdrawalTransactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get("amount")
+        #validation
+        if not amount or float(amount) <= 0:
+            return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+        with db_transaction.atomic():
+            wallet = Wallet.objects.select_for_update().get(user=request.user)
+
+            if wallet.balance < float(amount):
+                return JsonResponse({"error": "Insufficient funds for this withdrawal transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+            transaction = Transaction.objects.create(wallet=wallet, type="withdrawal", amount=float(amount), status="completed")
+
+        return JsonResponse({"message": "Withdrawal transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
