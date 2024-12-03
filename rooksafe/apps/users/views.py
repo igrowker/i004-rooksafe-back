@@ -162,6 +162,7 @@ class SellTransactionView(APIView):
 
         return JsonResponse({"message": "Sell transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
 
+
 class WithdrawalTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
