@@ -21,8 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('apps.Evaluations.urls')),
     path('', include('apps.users.urls')),               # This will handle the root URL
-    path('auth/', include('apps.users.urls')),          # Routes for authentication
-    path('api/users/', include('apps.users.urls')),     # User-related API routes
     path('api/education/', include('apps.educationContent.urls')),
     path('finnhub/', include('apps.finnhub.urls')),
     path("yfinance/", include("apps.yahooFinance.urls")),

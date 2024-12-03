@@ -27,23 +27,51 @@ class YahooFinanceService:
 
     @staticmethod
     def get_historical_data(symbol, amount, interval):
-    # Determine the period and interval based on the request
+    # Determine the valid period and interval for yfinance
         if interval == "days":
-            period = f"{amount}d"  # Example: "30d" for 30 days
-            data_interval = "1d"  # Daily data
+            if amount <= 1:
+                period = "1d"
+            elif amount <= 5:
+                period = "5d"
+            elif amount <= 30:
+                period = "1mo"
+            elif amount <= 90:
+                period = "3mo"
+            elif amount <= 180:
+                period = "6mo"
+            elif amount <= 365:
+                period = "1y"
+            else:
+                period = "max"
+            data_interval = "1d"
         elif interval == "hours":
-            period = "1d" 
-            data_interval = "1h"  # Hourly data
+            period = "7d"
+            data_interval = "1h"
+        elif interval == "month":
+            if amount == 1:
+                period = "1mo"
+            elif amount <= 3:
+                period = "3mo"
+            elif amount <= 6:
+                period = "6mo"
+            elif amount <= 12:
+                period = "1y"
+            else:
+                period = "max"
+            data_interval = "1mo"  # Monthly data
         else:
-           raise ValueError("Invalid interval. Use 'days' or 'hours'.")
-       
+            raise ValueError("Invalid interval. Use 'days', 'hours', or 'month'.")
+
         # Fetch the stock data
         ticker = yf.Ticker(symbol)
-        historical_data = ticker.history(period=period, interval=data_interval)
-        
+        try:
+            historical_data = ticker.history(period=period, interval=data_interval)
+        except Exception as e:
+            raise ValueError(f"Error fetching data: {str(e)}")
+
         if historical_data.empty:
             raise ValueError(f"No data found for symbol: {symbol}")
-    
+
         # Transform data to a list of dictionaries for JSON serialization
         return historical_data.reset_index().to_dict(orient="records")
 
@@ -52,6 +80,31 @@ class YahooFinanceService:
         """Yahoo Finance doesn't provide symbol lists directly, so mock this or use external resources."""
         # Return a mocked list or implement a third-party API to fetch symbols
         return [
-            {"symbol": "AAPL", "name": "Apple Inc."},
-            {"symbol": "MSFT", "name": "Microsoft Corp."},
-        ]
+        {"symbol": "AAPL", "name": "Apple Inc."},
+        {"symbol": "MSFT", "name": "Microsoft Corp."},
+        {"symbol": "GOOG", "name": "Alphabet Inc. (Google)"},
+        {"symbol": "AMZN", "name": "Amazon.com, Inc."},
+        {"symbol": "TSLA", "name": "Tesla Inc."},
+        {"symbol": "META", "name": "Meta Platforms Inc. (Facebook)"},
+        {"symbol": "NVDA", "name": "NVIDIA Corporation"},
+        {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust"},
+        {"symbol": "NFLX", "name": "Netflix Inc."},
+        {"symbol": "BA", "name": "Boeing Co."},
+        {"symbol": "DIS", "name": "The Walt Disney Company"},
+        {"symbol": "TSM", "name": "Taiwan Semiconductor Manufacturing Company"},
+        {"symbol": "INTC", "name": "Intel Corporation"},
+        {"symbol": "PYPL", "name": "PayPal Holdings, Inc."},
+        {"symbol": "V", "name": "Visa Inc."},
+        {"symbol": "JPM", "name": "JPMorgan Chase & Co."},
+        {"symbol": "WMT", "name": "Walmart Inc."},
+        {"symbol": "GE", "name": "General Electric Company"},
+        {"symbol": "AMD", "name": "Advanced Micro Devices, Inc."},
+        {"symbol": "GS", "name": "Goldman Sachs Group, Inc."},
+        {"symbol": "MRK", "name": "Merck & Co., Inc."},
+        {"symbol": "MCD", "name": "McDonald's Corporation"},
+        {"symbol": "CVX", "name": "Chevron Corporation"},
+        {"symbol": "HD", "name": "Home Depot, Inc."},
+        {"symbol": "PFE", "name": "Pfizer Inc."},
+        {"symbol": "KO", "name": "The Coca-Cola Company"},
+        {"symbol": "XOM", "name": "Exxon Mobil Corporation"},
+    ]
