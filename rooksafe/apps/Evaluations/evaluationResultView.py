@@ -5,9 +5,10 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
-VALID_CHOICES = {1, 2, 3, 4}
+VALID_CHOICES = [1, 2, 3, 4]
+TOTAL_SCORE = 100
+QUESTION_WEIGHT = TOTAL_SCORE / len(VALID_CHOICES)
 
-# EXPECTED_RESPONSES_COUNT 
 
 LEVEL_MAPPING = {
     "básico": {
@@ -52,40 +53,41 @@ class EvaluacionView(APIView):
         respuestas = request.data.get("respuestas", None)
 
         if not respuestas or not isinstance(respuestas, list):
-            return JsonResponse({"error": "Invalid or missing 'respuestas'. It must be a non-empty list."}, status=400)
+            return JsonResponse({"error": "Respuestas inválidas o faltantes. Debe ser una lista no vacía."}, status=400)
         
         if len(respuestas) != len(VALID_CHOICES):
             return JsonResponse(
                 {
-                    "error": f"Expected {len(VALID_CHOICES)} answers, but received {len(respuestas)}.",
-                    "message": f"Please provide exactly {len(VALID_CHOICES)} answers."
+                    "error": f"Se esperaban {len(VALID_CHOICES)} respuestas, pero se recibieron {len(respuestas)}.",
+                    "message": f"Por favor, proporciona exactamente {len(VALID_CHOICES)} respuestas."
                 },
                 status=400
             )
-        
-        invalid_responses = [resp for resp in respuestas if resp not in VALID_CHOICES]
-
-        if invalid_responses:
-            return JsonResponse({
-                "error": "Invalid responses found.",
-                "invalid_responses": invalid_responses,
-                "message": "Must be between 1 and 4"
-            }, status=400)
-
-        max_score_per_question = max(VALID_CHOICES)
-        percentage_scores = [(resp / max_score_per_question) * 100 for resp in respuestas]
-        average_score = sum(percentage_scores) / len(VALID_CHOICES)
+        # Validate that each answer is within the allowed range
+        for answer in respuestas:
+            if not (1 <= answer <= 4):
+                return JsonResponse(
+                    {
+                        "error": "Fuera del rango permitido.",
+                        "message": "Cada respuesta debe estar entre 1 y 4."
+                    },
+                    status=400
+                )
+        ###
+        total_score = 0
+        for i, answer in enumerate(respuestas):
+            if i < len(VALID_CHOICES) and answer == VALID_CHOICES[i]:
+                total_score += QUESTION_WEIGHT  # add question_weight for each good answer
 
         level = None
         for level_key, level_data in LEVEL_MAPPING.items():
             min_score, max_score = level_data["score_range"]
-            if min_score <= average_score <= max_score:
+            if min_score <= total_score <= max_score:
                 level = level_key
                 break
 
         if not level:
-            return JsonResponse({"error": "Score out of valid range."}, status=400)
-
+            return JsonResponse({"error":"Fuera del rango de puntuación."})
 
         # Update experience level of the user
         user = request.user
@@ -98,7 +100,7 @@ class EvaluacionView(APIView):
             "perfil": level_info["profile"],
             "nivel": level_info["front_level"],
             "descripción": level_info["description"],
-            "puntaje": round(average_score, 2),
+            "puntaje": round(total_score, 2),
             "rango_puntaje": f"{level_info['score_range'][0]}-{level_info['score_range'][1]}"
         }
 

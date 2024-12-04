@@ -10,3 +10,4 @@ class EvaluationsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evaluations
         fields = "__all__"
+
