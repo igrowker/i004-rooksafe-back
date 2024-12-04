@@ -53,6 +53,7 @@ THIRD_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    'django_crontab',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
@@ -151,3 +152,9 @@ SIMPLE_JWT = {
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
+
+YOUTUBE_API_KEY = 'AIzaSyB1XXZy8Pi43PBaYDerYu5OBZNIxK3FAdw'
+#every hour
+# CRONJOBS = [
+#     ('0 * * * *', 'django.core.management.call_command', ['fetch_videos']),
+# ]
