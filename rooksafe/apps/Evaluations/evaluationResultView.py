@@ -5,9 +5,10 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
-VALID_CHOICES = {1, 2, 3, 4}
+VALID_CHOICES = [1, 2, 3, 4]
+TOTAL_SCORE = 100
+QUESTION_WEIGHT = TOTAL_SCORE / len(VALID_CHOICES)
 
-# EXPECTED_RESPONSES_COUNT 
 
 LEVEL_MAPPING = {
     "básico": {
@@ -63,29 +64,21 @@ class EvaluacionView(APIView):
                 status=400
             )
         
-        invalid_responses = [resp for resp in respuestas if resp not in VALID_CHOICES]
-
-        if invalid_responses:
-            return JsonResponse({
-                "error": "Invalid responses found.",
-                "invalid_responses": invalid_responses,
-                "message": "Must be between 1 and 4"
-            }, status=400)
-
-        max_score_per_question = max(VALID_CHOICES)
-        percentage_scores = [(resp / max_score_per_question) * 100 for resp in respuestas]
-        average_score = sum(percentage_scores) / len(VALID_CHOICES)
+        ###
+        total_score = 0
+        for i, answer in enumerate(respuestas):
+            if i < len(VALID_CHOICES) and answer == VALID_CHOICES[i]:
+                total_score += QUESTION_WEIGHT  # add question_weight for each good answer
 
         level = None
         for level_key, level_data in LEVEL_MAPPING.items():
             min_score, max_score = level_data["score_range"]
-            if min_score <= average_score <= max_score:
+            if min_score <= total_score <= max_score:
                 level = level_key
                 break
 
         if not level:
-            return JsonResponse({"error": "Score out of valid range."}, status=400)
-
+            return JsonResponse({"error":"Out of score range"})
 
         # Update experience level of the user
         user = request.user
@@ -98,7 +91,7 @@ class EvaluacionView(APIView):
             "perfil": level_info["profile"],
             "nivel": level_info["front_level"],
             "descripción": level_info["description"],
-            "puntaje": round(average_score, 2),
+            "puntaje": round(total_score, 2),
             "rango_puntaje": f"{level_info['score_range'][0]}-{level_info['score_range'][1]}"
         }
 
