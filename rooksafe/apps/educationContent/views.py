@@ -23,22 +23,26 @@ class EducationContentView(APIView):
         user = request.user
         user_experience_level = user.experience_level
 
-        content = EducationContent.objects.filter(level=user_experience_level)
-
-        content_type = request.query_params.get('type', None)
-        if content_type:
-            content = content.filter(content_type=content_type)
-
+        content_type = request.query_params.get('type', 'all')
+        if content_type == 'all':
+            content = EducationContent.objects.filter(level=user_experience_level)
+        else:
+            content = EducationContent.objects.filter(
+                level=user_experience_level,
+                content_type=content_type
+            )
         if not content.exists():
             return Response({
-                "message": f"No educational content available for {user_experience_level} level with the specified filters."
+                "message": f"No hay contenido educativo disponible para tu nivel de experiencia ({user_experience_level}) con los filtros especificados."
             }, status=status.HTTP_404_NOT_FOUND)
+
+
 
         paginator = self.CustomPagination()
         paginated_content = paginator.paginate_queryset(content, request)
         serializer = EducationContentSerializer(paginated_content, many=True)
 
         return paginator.get_paginated_response({
-            "message": f"Educational content for {user_experience_level} level",
+            "message": f"Contenido educativo para el nivel {user_experience_level}",
             "data": serializer.data
         })

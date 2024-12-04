@@ -53,17 +53,26 @@ class EvaluacionView(APIView):
         respuestas = request.data.get("respuestas", None)
 
         if not respuestas or not isinstance(respuestas, list):
-            return JsonResponse({"error": "Invalid or missing 'respuestas'. It must be a non-empty list."}, status=400)
+            return JsonResponse({"error": "Respuestas inválidas o faltantes. Debe ser una lista no vacía."}, status=400)
         
         if len(respuestas) != len(VALID_CHOICES):
             return JsonResponse(
                 {
-                    "error": f"Expected {len(VALID_CHOICES)} answers, but received {len(respuestas)}.",
-                    "message": f"Please provide exactly {len(VALID_CHOICES)} answers."
+                    "error": f"Se esperaban {len(VALID_CHOICES)} respuestas, pero se recibieron {len(respuestas)}.",
+                    "message": f"Por favor, proporciona exactamente {len(VALID_CHOICES)} respuestas."
                 },
                 status=400
             )
-        
+        # Validate that each answer is within the allowed range
+        for answer in respuestas:
+            if not (1 <= answer <= 4):
+                return JsonResponse(
+                    {
+                        "error": "Fuera del rango permitido.",
+                        "message": "Cada respuesta debe estar entre 1 y 4."
+                    },
+                    status=400
+                )
         ###
         total_score = 0
         for i, answer in enumerate(respuestas):
@@ -78,7 +87,7 @@ class EvaluacionView(APIView):
                 break
 
         if not level:
-            return JsonResponse({"error":"Out of score range"})
+            return JsonResponse({"error":"Fuera del rango de puntuación."})
 
         # Update experience level of the user
         user = request.user
