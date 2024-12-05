@@ -6,11 +6,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, WalletSerializer
-from .models import Wallet, Transaction
+from .models import Wallet, Transaction, StockInvestment
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
+import yfinance as yf
+from django.db import transaction as db_transaction
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -97,11 +99,22 @@ class WalletStatusView(APIView):
         try:
             wallet = Wallet.objects.get(user=request.user)
         except Wallet.DoesNotExist:
-            return JsonResponse({"error":"Not found"}, status=404)
+            return JsonResponse({"error": "Not found"}, status=404)
         
-        serializer = WalletSerializer(wallet)
-        return JsonResponse(serializer.data, status=200)
+        # Get the total value of all investments
+        investments = StockInvestment.objects.filter(user=request.user)
+        total_investment_value = sum([investment.current_value for investment in investments])
+        
+        # Calculate the total wallet value (balance + investments)
+        total_wallet_value = wallet.balance + total_investment_value
 
+        data = {
+            "balance": wallet.balance,
+            "total_investment_value": total_investment_value,
+            "total_wallet_value": total_wallet_value,
+        }
+        
+        return JsonResponse(data, status=200)
 
 
 # Add money to wallet
@@ -128,22 +141,55 @@ class BuyTransactionView(APIView):
 
     def post(self, request):
         amount = request.data.get("amount")
+        stock_symbol = request.data.get("stock_symbol")
 
         if not amount or float(amount) <= 0:
             return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
 
-        with db_transaction.atomic():
+        try:
+            # Fetch stock price using yfinance
+            stock = yf.Ticker(stock_symbol)
+            stock_info = stock.history(period="1d")
+            stock_price = stock_info["Close"].iloc[-1]
+
+            # Calculate how many shares the user can buy
+            total_stocks = float(amount) / stock_price
+            total_stocks = round(total_stocks, 2)  # Round to 2 decimal places
+
+            # Check if the user has enough funds in their wallet
             wallet = Wallet.objects.select_for_update().get(user=request.user)
-
             if wallet.balance < float(amount):
-                return JsonResponse({"error": "Insufficient funds for this buy transaction."}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({"error": "Insufficient funds."}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
+            # Create the buy transaction and update the user's wallet balance
+            with db_transaction.atomic():
+                # Deduct the amount from the user's wallet
+                wallet.balance -= float(amount)
+                wallet.save()
+
+                # Record the transaction
                 transaction = Transaction.objects.create(wallet=wallet, type="buy", amount=float(amount), status="completed")
-            except Exception as e:
-                return JsonResponse({"error": f"Transaction creation failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return JsonResponse({"message": "Buy transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+                # Create or update stock investment record
+                investment, created = StockInvestment.objects.update_or_create(
+                    user=request.user, 
+                    stock_symbol=stock_symbol,
+                    defaults={
+                        'number_of_shares': total_stocks,
+                        'purchase_price': stock_price,
+                        'current_value': stock_price * total_stocks,
+                    }
+                )
+
+        except Exception as e:
+            return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return JsonResponse({
+            "message": "Buy transaction completed.",
+            "transaction_id": transaction.id,
+            "stocks_purchased": total_stocks,
+            "stock_price": stock_price
+        }, status=status.HTTP_201_CREATED)
 
 
 class SellTransactionView(APIView):
