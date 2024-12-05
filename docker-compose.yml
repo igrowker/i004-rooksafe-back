@@ -35,11 +35,13 @@ services:
       - DB_PORT=${DB_PORT}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - YT_API_KEY=${YT_API_KEY}      
+      - YT_API_KEY=${YT_API_KEY}
+      - REDIS_URL=${REDIS_URL}            
     working_dir: /usr/share/app
     volumes:
       - static:/usr/share/app/site_app/static
     depends_on:
+      redis-rooksafe:
       db:
           condition: service_healthy
     networks:
@@ -58,6 +60,14 @@ services:
       - rooksafe-back
     networks:
       - rooksafe
+  redis-rooksafe:
+    image: redis:alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - rooksafe  
+
 volumes:
   pgdata:
   static:
