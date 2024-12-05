@@ -140,44 +140,46 @@ class BuyTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        amount = request.data.get("amount")
-        stock_symbol = request.data.get("stock_symbol")
+        shares = request.data.get("shares")  # Número de acciones a comprar
+        stock_symbol = request.data.get("stock_symbol")  # Símbolo de la acción
 
-        if not amount or float(amount) <= 0:
-            return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+        if not shares or int(shares) <= 0:
+            return JsonResponse({"error": "Invalid number of shares."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Fetch stock price using yfinance
+            # Obtener el precio actual de la acción usando yfinance
             stock = yf.Ticker(stock_symbol)
             stock_info = stock.history(period="1d")
-            stock_price = stock_info["Close"].iloc[-1]
+            stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
 
-            # Calculate how many shares the user can buy
-            total_stocks = float(amount) / stock_price
-            total_stocks = round(total_stocks, 2)  # Round to 2 decimal places
+            # Calcular el costo total de la transacción
+            total_cost = stock_price * int(shares)
 
-            # Check if the user has enough funds in their wallet
+            # Verificar si el usuario tiene suficiente saldo en su wallet
             wallet = Wallet.objects.select_for_update().get(user=request.user)
-            if wallet.balance < float(amount):
+            if wallet.balance < total_cost:
                 return JsonResponse({"error": "Insufficient funds."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Create the buy transaction and update the user's wallet balance
+            # Crear la transacción de compra y actualizar la wallet
             with db_transaction.atomic():
-                # Deduct the amount from the user's wallet
-                wallet.balance -= float(amount)
+                wallet.balance -= total_cost
                 wallet.save()
 
-                # Record the transaction
-                transaction = Transaction.objects.create(wallet=wallet, type="buy", amount=float(amount), status="completed")
+                transaction = Transaction.objects.create(
+                    wallet=wallet,
+                    type="buy",
+                    amount=total_cost,
+                    status="completed"
+                )
 
-                # Create or update stock investment record
+
                 investment, created = StockInvestment.objects.update_or_create(
-                    user=request.user, 
+                    user=request.user,
                     stock_symbol=stock_symbol,
                     defaults={
-                        'number_of_shares': total_stocks,
+                        'number_of_shares': int(shares),
                         'purchase_price': stock_price,
-                        'current_value': stock_price * total_stocks,
+                        'current_value': stock_price * int(shares),
                     }
                 )
 
@@ -187,8 +189,9 @@ class BuyTransactionView(APIView):
         return JsonResponse({
             "message": "Buy transaction completed.",
             "transaction_id": transaction.id,
-            "stocks_purchased": total_stocks,
-            "stock_price": stock_price
+            "shares_purchased": int(shares),
+            "stock_price": stock_price,
+            "total_cost": total_cost
         }, status=status.HTTP_201_CREATED)
 
 
@@ -213,64 +216,58 @@ class SellTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        stock_symbol = request.data.get("stock_symbol")
-        shares_to_sell = request.data.get("shares_to_sell")
+        shares = request.data.get("shares")  # Número de acciones a vender
+        stock_symbol = request.data.get("stock_symbol")  # Símbolo de la acción
 
-        if not shares_to_sell or float(shares_to_sell) <= 0:
+        # Validar el número de acciones
+        if not shares or int(shares) <= 0:
             return JsonResponse({"error": "Invalid number of shares."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Fetch stock price using yfinance
+            # Obtener el precio actual de la acción usando yfinance
             stock = yf.Ticker(stock_symbol)
             stock_info = stock.history(period="1d")
-            stock_price = stock_info["Close"].iloc[-1]  # Current price of the stock
+            stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
 
-            # Fetch the user's investment for the given stock
+            # Validar si el usuario tiene suficientes acciones
             investment = StockInvestment.objects.get(user=request.user, stock_symbol=stock_symbol)
-
-            if investment.number_of_shares < float(shares_to_sell):
+            if investment.number_of_shares < int(shares):
                 return JsonResponse({"error": "Insufficient shares to sell."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Calculate total sale value and profit/loss
-            total_sale_value = float(shares_to_sell) * stock_price
-            profit_or_loss = total_sale_value - (float(shares_to_sell) * investment.purchase_price)
+            # Calcular el valor de la venta
+            total_value = stock_price * int(shares)
 
-            # Update the wallet balance and the investment record
-            wallet = Wallet.objects.select_for_update().get(user=request.user)
-
+            # Crear la transacción de venta y actualizar la wallet
             with db_transaction.atomic():
-                # Update wallet balance
-                wallet.balance += total_sale_value
+                # Reducir el número de acciones en la inversión
+                investment.number_of_shares -= int(shares)
+                investment.current_value = investment.number_of_shares * stock_price
+                investment.save()
+
+                # Agregar el valor total a la wallet del usuario
+                wallet = Wallet.objects.select_for_update().get(user=request.user)
+                wallet.balance += total_value
                 wallet.save()
 
-                # Update investment record
-                investment.number_of_shares -= float(shares_to_sell)
-                investment.current_value = investment.number_of_shares * stock_price
-                if investment.number_of_shares == 0:
-                    investment.delete()  # Remove investment if all shares are sold
-                else:
-                    investment.save()
-
-                # Record the sell transaction
+                # Registrar la transacción de venta
                 transaction = Transaction.objects.create(
                     wallet=wallet,
                     type="sell",
-                    amount=total_sale_value,
+                    amount=total_value,
                     status="completed"
                 )
 
         except StockInvestment.DoesNotExist:
-            return JsonResponse({"error": "No investment found for the specified stock symbol."}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({"error": "No investment found for the given stock symbol."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return JsonResponse({
             "message": "Sell transaction completed.",
             "transaction_id": transaction.id,
-            "shares_sold": shares_to_sell,
-            "sale_value": total_sale_value,
-            "profit_or_loss": profit_or_loss,
-            "stock_price": stock_price
+            "shares_sold": int(shares),
+            "stock_price": stock_price,
+            "total_value": total_value
         }, status=status.HTTP_201_CREATED)
 
 
