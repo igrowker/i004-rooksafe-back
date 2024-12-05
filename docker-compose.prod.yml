@@ -42,7 +42,8 @@ services:
       - ./nginx/my_ginx.conf:/etc/nginx/sites-available/my_ginx.conf
       - static:/app/static
     depends_on:
-      - rooksafe-back
+      redis-rooksafe:
+        condition: service_started
     networks:
       - rooksafe
 
