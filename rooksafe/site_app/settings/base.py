@@ -153,7 +153,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
-YOUTUBE_API_KEY = os.environ['YT_API_KEY']
+# YOUTUBE_API_KEY = os.environ['YT_API_KEY']
 #every hour
 # CRONJOBS = [
 #     ('0 * * * *', 'django.core.management.call_command', ['fetch_videos']),
