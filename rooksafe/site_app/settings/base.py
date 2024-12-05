@@ -53,7 +53,6 @@ THIRD_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
-    'django_crontab',
 ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_APPS
