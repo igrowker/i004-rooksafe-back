@@ -66,15 +66,23 @@ class Command(BaseCommand):
                 f"Failed to fetch podcasts: {response.status_code} {response.text}"
             )
 
-    def is_relevant_to_crypto(self, show):
-        """Check if the podcast is specifically relevant to crypto."""
+    def is_relevant_to_crypto(self, show, expected_language="es"):
+        """Check if the podcast is specifically relevant to crypto and in the desired language."""
         crypto_keywords = ["cripto", "crypto", "blockchain", "bitcoin", "ethereum"]
         name = show.get('name', '').lower()
         description = show.get('description', '').lower()
+        
+        # Check if the podcast is relevant to crypto
+        if not any(keyword in name or keyword in description for keyword in crypto_keywords):
+            return False
 
-        # Check if any crypto-related keyword is in the name or description
-        return any(keyword in name or keyword in description for keyword in crypto_keywords)
+        # Check if the podcast language matches the expected language
+        languages = show.get('languages', [])
+        if expected_language not in languages:
+            print(f"Skipped podcast due to language mismatch: {show.get('name', 'Unknown Podcast')} (Languages: {languages})")
+            return False
 
+        return True
     def save_to_database(self, show, level):
         """Save podcast to the database."""
         podcast_name = show['name']
