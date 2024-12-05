@@ -54,6 +54,12 @@ class Command(BaseCommand):
                         title = sanitize_text(item['snippet']['title'])
                         description = sanitize_text(item['snippet']['description'])
                         url = f'https://www.youtube.com/watch?v={video_id}'
+                        thumbnails = item['snippet']['thumbnails']
+                        image_url = (
+                            thumbnails.get('high', {}).get('url') or  # Use 'high' resolution if available
+                            thumbnails.get('medium', {}).get('url') or  # Fallback to 'medium'
+                            thumbnails.get('default', {}).get('url')  # Fallback to 'default'
+                        )
 
                         # Skip duplicates
                         if EducationContent.objects.filter(content_url=url).exists():
@@ -66,10 +72,11 @@ class Command(BaseCommand):
                                 'title': title,
                                 'content_type': 'video',
                                 'level': level,
+                                'image_url': image_url,
                             }
                         )
                         videos_fetched += 1
-                        print(f"Saved video: {title} to {level}")
+                        print(f"Saved video: {title} with cover image to {level}")
                     except KeyError as e:
                         print(f"Missing key in video item: {e}")
                     except Exception as e:
