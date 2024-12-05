@@ -6,10 +6,12 @@ from datetime import datetime, timedelta
 from django.http import JsonResponse
 
 
+GLOBAL_API_KEY = 'ct5i9t1r01qp4ur7ng1gct5i9t1r01qp4ur7ng20'
+
 class FinnhubService:
     
     def __init__(self):
-        self.client = finnhub.Client(api_key='ct5i9t1r01qp4ur7ng1gct5i9t1r01qp4ur7ng20')
+        self.client = finnhub.Client(api_key=GLOBAL_API_KEY)
 
 
     def get_stock_quote(self, symbol):
@@ -93,6 +95,6 @@ class FinnhubService:
         """Fetch stock symbols for a specific exchange (e.g., US)."""
         try:
             symbols = self.client.stock_symbols(exchange)
-            return [{"symbol": sym["symbol"], "name": sym["description"]} for sym in symbols]
+            return [{"symbol": sym["symbol"], "name": sym["description"]} for sym in symbols[:100]] # solo 100 stocks aleatorios
         except Exception as e:
             raise ValueError(f"Error fetching stock symbols: {e}")

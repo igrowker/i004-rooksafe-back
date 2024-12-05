@@ -1,33 +1,67 @@
-import asyncio
+from collections import defaultdict
+from datetime import datetime
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-import websocket
 
 class TradeConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.candle_data = defaultdict(list)  # Almacena datos de trades para calcular velas.
+
     async def connect(self):
         await self.accept()
 
-        # Iniciar conexión WebSocket a Finnhub
-        self.finnhub_ws = websocket.WebSocketApp(
-            "wss://ws.finnhub.io?token=ct5i9t1r01qp4ur7ng1gct5i9t1r01qp4ur7ng20",
-            on_message=self.on_finnhub_message,
-            on_error=self.on_finnhub_error,
-            on_close=self.on_finnhub_close,
-        )
-
-        # Ejecutar la conexión WebSocket en un hilo separado
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self.finnhub_ws.run_forever)
-
     async def disconnect(self, close_code):
-        self.finnhub_ws.close()
+        print(f"WebSocket desconectado: {close_code}")
 
-    async def on_finnhub_message(self, message):
-        # Enviar datos al frontend
-        await self.send(text_data=json.dumps({"type": "trade_update", "data": json.loads(message)}))
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        if data['type'] == 'trade':
+            await self.process_trade_data(data['data'])
 
-    async def on_finnhub_error(self, error):
-        await self.send(text_data=json.dumps({"type": "error", "message": str(error)}))
+    async def process_trade_data(self, trades):
+        for trade in trades:
+            symbol = trade['s']
+            price = trade['p']
+            volume = trade['v']
+            timestamp = trade['t'] // 1000  # Convertir a segundos.
 
-    async def on_finnhub_close(self):
-        await self.send(text_data=json.dumps({"type": "info", "message": "Conexión cerrada con Finnhub"}))
+            # Agregar datos a la lista de trades
+            self.candle_data[symbol].append({
+                'price': price,
+                'volume': volume,
+                'timestamp': timestamp
+            })
+
+        # Generar velas cada 5 segundos
+        for symbol, trades in self.candle_data.items():
+            if len(trades) > 0:
+                # Agrupar datos por intervalos de 5 segundos
+                candles = self.generate_candles(trades)
+                await self.send(json.dumps({"type": "candles", "symbol": symbol, "candles": candles}))
+
+    def generate_candles(self, trades):
+        # Agrupar datos por intervalos de 5 segundos
+        grouped = defaultdict(list)
+        for trade in trades:
+            five_second_interval = trade['timestamp'] // 5
+            grouped[five_second_interval].append(trade)
+
+        candles = []
+        for interval, group in grouped.items():
+            prices = [t['price'] for t in group]
+            volumes = [t['volume'] for t in group]
+
+            # Convertir el timestamp del intervalo a un formato legible
+            readable_time = datetime.fromtimestamp(interval * 5).strftime('%Y-%m-%d %H:%M:%S')
+
+            candles.append({
+                "timestamp": readable_time,  # Usar el formato legible
+                "open": prices[0],
+                "high": max(prices),
+                "low": min(prices),
+                "close": prices[-1],
+                "volume": sum(volumes)
+            })
+
+        return candles

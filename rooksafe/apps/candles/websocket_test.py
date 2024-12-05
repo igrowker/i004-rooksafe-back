@@ -1,6 +1,8 @@
 import websocket
 import json
 
+
+# Pruebas de salida en cosnsola
 # Clave API de Finnhub
 API_KEY = "ct5i9t1r01qp4ur7ng1gct5i9t1r01qp4ur7ng20"
 
@@ -20,7 +22,7 @@ def on_close(ws, close_status_code, close_msg):
 # Función que maneja la apertura de la conexión
 def on_open(ws):
     # Suscripción a un par de símbolos
-    symbols = ["AAPL", "BTC/USD"]
+    symbols = ["MSFT"] # solo stocks(No cripto/forex)
     for symbol in symbols:
         subscription_message = {
             "type": "subscribe",

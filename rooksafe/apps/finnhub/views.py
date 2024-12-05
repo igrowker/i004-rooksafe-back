@@ -102,7 +102,7 @@ def stock_candles_api(request, symbol):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
-
+# Trae todas las stocks
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])  
 #Cache the response for eco fetching
@@ -130,4 +130,6 @@ def get_symbols(request):
 
         return JsonResponse({"status": "success", "data": symbols})
     except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        return JsonResponse({"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+

@@ -22,20 +22,6 @@ class CandleGenerator:
             candles = []
             current_time = start_time
 
-            # while current_time < end_time:
-            #     # Fetch the live quote
-            #     quote = self.finnhub_service.get_stock_quote(symbol)
-
-            #     candle = {
-            #         'time': current_time.isoformat(),
-            #         'open': quote['o'],  # Open price (last known price at start of interval)
-            #         'high': quote['h'],  # High price
-            #         'low': quote['l'],   # Low price
-            #         'close': quote['c'], # Closing price
-            #     }
-            #     candles.append(candle)
-            
-
             # genera OHLC aleatorios
             while current_time < end_time:
                 # Fetch the live quote
