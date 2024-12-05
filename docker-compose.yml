@@ -42,6 +42,7 @@ services:
       - static:/usr/share/app/site_app/static
     depends_on:
       redis-rooksafe:
+        condition: service_started
       db:
           condition: service_healthy
     networks:
