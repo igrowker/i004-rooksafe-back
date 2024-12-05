@@ -93,6 +93,6 @@ class FinnhubService:
         """Fetch stock symbols for a specific exchange (e.g., US)."""
         try:
             symbols = self.client.stock_symbols(exchange)
-            return [{"symbol": sym["symbol"], "name": sym["description"]} for sym in symbols]
+            return [{"symbol": sym["symbol"], "name": sym["description"]} for sym in symbols[:50]] # Limitado a 50 stock
         except Exception as e:
             raise ValueError(f"Error fetching stock symbols: {e}")

@@ -192,21 +192,86 @@ class BuyTransactionView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+# class SellTransactionView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         amount = request.data.get("amount")
+
+#         if not amount or float(amount) <= 0:
+#             return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+
+#         with db_transaction.atomic():
+#             wallet = Wallet.objects.select_for_update().get(user=request.user)
+
+#             transaction = Transaction.objects.create(wallet=wallet, type="sell", amount=float(amount), status="completed")
+
+#         return JsonResponse({"message": "Sell transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+
+
 class SellTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        amount = request.data.get("amount")
+        stock_symbol = request.data.get("stock_symbol")
+        shares_to_sell = request.data.get("shares_to_sell")
 
-        if not amount or float(amount) <= 0:
-            return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
+        if not shares_to_sell or float(shares_to_sell) <= 0:
+            return JsonResponse({"error": "Invalid number of shares."}, status=status.HTTP_400_BAD_REQUEST)
 
-        with db_transaction.atomic():
+        try:
+            # Fetch stock price using yfinance
+            stock = yf.Ticker(stock_symbol)
+            stock_info = stock.history(period="1d")
+            stock_price = stock_info["Close"].iloc[-1]  # Current price of the stock
+
+            # Fetch the user's investment for the given stock
+            investment = StockInvestment.objects.get(user=request.user, stock_symbol=stock_symbol)
+
+            if investment.number_of_shares < float(shares_to_sell):
+                return JsonResponse({"error": "Insufficient shares to sell."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Calculate total sale value and profit/loss
+            total_sale_value = float(shares_to_sell) * stock_price
+            profit_or_loss = total_sale_value - (float(shares_to_sell) * investment.purchase_price)
+
+            # Update the wallet balance and the investment record
             wallet = Wallet.objects.select_for_update().get(user=request.user)
 
-            transaction = Transaction.objects.create(wallet=wallet, type="sell", amount=float(amount), status="completed")
+            with db_transaction.atomic():
+                # Update wallet balance
+                wallet.balance += total_sale_value
+                wallet.save()
 
-        return JsonResponse({"message": "Sell transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+                # Update investment record
+                investment.number_of_shares -= float(shares_to_sell)
+                investment.current_value = investment.number_of_shares * stock_price
+                if investment.number_of_shares == 0:
+                    investment.delete()  # Remove investment if all shares are sold
+                else:
+                    investment.save()
+
+                # Record the sell transaction
+                transaction = Transaction.objects.create(
+                    wallet=wallet,
+                    type="sell",
+                    amount=total_sale_value,
+                    status="completed"
+                )
+
+        except StockInvestment.DoesNotExist:
+            return JsonResponse({"error": "No investment found for the specified stock symbol."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return JsonResponse({
+            "message": "Sell transaction completed.",
+            "transaction_id": transaction.id,
+            "shares_sold": shares_to_sell,
+            "sale_value": total_sale_value,
+            "profit_or_loss": profit_or_loss,
+            "stock_price": stock_price
+        }, status=status.HTTP_201_CREATED)
 
 
 class WithdrawalTransactionView(APIView):
