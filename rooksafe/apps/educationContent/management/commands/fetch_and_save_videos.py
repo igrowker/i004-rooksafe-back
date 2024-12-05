@@ -3,6 +3,10 @@ from googleapiclient.discovery import build
 from django.conf import settings
 from apps.educationContent.models import EducationContent
 from apps.educationContent.serializers import sanitize_text
+import os
+
+YOUTUBE_API_KEY = os.environ['YT_API_KEY']
+
 
 
 class Command(BaseCommand):
