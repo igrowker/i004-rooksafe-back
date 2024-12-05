@@ -24,6 +24,31 @@ class EducationContentView(APIView):
         user_experience_level = user.experience_level
 
         content_type = request.query_params.get('type', 'all')
+        content_id = request.query_params.get('id', None)
+
+        if content_id:
+            if content_type != 'all':
+                content = EducationContent.objects.filter(
+                    id=content_id,
+                    level=user_experience_level,
+                    content_type=content_type
+                )
+                if content.exists():
+                    serializer = EducationContentSerializer(content.first())
+                    return Response({
+                        "message": f"Detalles del contenido educativo con ID {content_id} para el nivel {user_experience_level}",
+                        "data": serializer.data
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        "message": f"No existe contenido de tipo '{content_type}' con ID {content_id} para tu nivel de experiencia ({user_experience_level})."
+                    }, status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response({
+                    "message": f"El tipo de contenido '{content_type}' no es válido o no está especificado correctamente para el ID proporcionado."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+
         if content_type == 'all':
             content = EducationContent.objects.filter(level=user_experience_level)
         else:
