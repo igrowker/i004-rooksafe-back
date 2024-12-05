@@ -64,7 +64,7 @@ jobs:
       DJ_EMAIL: '${{ secrets.DJ_EMAIL }}'
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
       YT_API_KEY: '${{ secrets.YT_API_KEY }}'
-
+      REDIS_URL: '${{ secrets.REDIS_URL }}'
     steps:
 
       - name: Checkout
