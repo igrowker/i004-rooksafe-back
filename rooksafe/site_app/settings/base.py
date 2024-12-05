@@ -162,21 +162,14 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
+            "hosts": [os.environ.get('REDIS_URL')], # agregar como .env REDIS
         },
     },
 }
 
-# Celery settings
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-# YOUTUBE_API_KEY = os.environ['YT_API_KEY']
-#every hour
-# CRONJOBS = [
-#     ('0 * * * *', 'django.core.management.call_command', ['fetch_videos']),
-# ]
+YOUTUBE_API_KEY = os.environ['YT_API_KEY']
+# every hour
+CRONJOBS = [
+    ('0 * * * *', 'django.core.management.call_command', ['fetch_videos']),
+]
