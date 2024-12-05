@@ -5,6 +5,11 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
+VALID_CHOICES = [1, 2, 3, 4]
+TOTAL_SCORE = 100
+QUESTION_WEIGHT = TOTAL_SCORE / len(VALID_CHOICES)
+
+
 LEVEL_MAPPING = {
     "básico": {
         "profile": "Conservador",
@@ -15,6 +20,7 @@ LEVEL_MAPPING = {
             "Tu foco no es generar una ganancia grande, sino limitar al máximo las pérdidas.",
             "Tu benchmark de rendimiento está por debajo del rendimiento promedio del mercado."
         ],
+        "score_range": (0, 45),
     },
     "intermedio": {
         "profile": "Equilibrado",
@@ -26,6 +32,7 @@ LEVEL_MAPPING = {
             "pero no perder de vista el control de pérdidas.",
             "Se podría decir que vas a tomar de benchmark un rendimiento de mercado."
         ],
+        "score_range": (46, 80),
     },
     "avanzado": {
         "profile": "Agresivo",
@@ -34,6 +41,7 @@ LEVEL_MAPPING = {
             "Buscás generar rendimientos sensiblemente superiores al benchmark promedio de mercado.",
             "Para esto tomás mayores riesgos que se pueden traducir en importantes pérdidas de capital, pero sos consciente de eso."
         ],
+        "score_range": (80, 100),
     },
 }
 
@@ -45,18 +53,41 @@ class EvaluacionView(APIView):
         respuestas = request.data.get("respuestas", None)
 
         if not respuestas or not isinstance(respuestas, list):
-            return JsonResponse({"error": "Invalid or missing 'respuestas'. It must be a non-empty list."}, status=400)
+            return JsonResponse({"error": "Respuestas inválidas o faltantes. Debe ser una lista no vacía."}, status=400)
         
-        last_answer = respuestas[-1]
+        if len(respuestas) != len(VALID_CHOICES):
+            return JsonResponse(
+                {
+                    "error": f"Se esperaban {len(VALID_CHOICES)} respuestas, pero se recibieron {len(respuestas)}.",
+                    "message": f"Por favor, proporciona exactamente {len(VALID_CHOICES)} respuestas."
+                },
+                status=400
+            )
+        # Validate that each answer is within the allowed range
+        for answer in respuestas:
+            if not (1 <= answer <= 4):
+                return JsonResponse(
+                    {
+                        "error": "Fuera del rango permitido.",
+                        "message": "Cada respuesta debe estar entre 1 y 4."
+                    },
+                    status=400
+                )
+        ###
+        total_score = 0
+        for i, answer in enumerate(respuestas):
+            if i < len(VALID_CHOICES) and answer == VALID_CHOICES[i]:
+                total_score += QUESTION_WEIGHT  # add question_weight for each good answer
 
-        if last_answer in [1, 2]:
-            level = "básico"
-        elif last_answer == 3:
-            level = "intermedio"
-        elif last_answer in [4]:
-            level = "avanzado"
-        else:
-            return JsonResponse({"error": f"Invalid value in 'respuestas'. Must be between 1 and 4."}, status=400)
+        level = None
+        for level_key, level_data in LEVEL_MAPPING.items():
+            min_score, max_score = level_data["score_range"]
+            if min_score <= total_score <= max_score:
+                level = level_key
+                break
+
+        if not level:
+            return JsonResponse({"error":"Fuera del rango de puntuación."})
 
         # Update experience level of the user
         user = request.user
@@ -69,6 +100,8 @@ class EvaluacionView(APIView):
             "perfil": level_info["profile"],
             "nivel": level_info["front_level"],
             "descripción": level_info["description"],
+            "puntaje": round(total_score, 2),
+            "rango_puntaje": f"{level_info['score_range'][0]}-{level_info['score_range'][1]}"
         }
 
         return JsonResponse(response_data, json_dumps_params={"ensure_ascii": False})

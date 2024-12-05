@@ -155,6 +155,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
+
 # Set Channels backend for WebSocket communication
 ASGI_APPLICATION = "site_app.asgi.application"
 CHANNEL_LAYERS = {
@@ -173,3 +174,9 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# YOUTUBE_API_KEY = os.environ['YT_API_KEY']
+#every hour
+# CRONJOBS = [
+#     ('0 * * * *', 'django.core.management.call_command', ['fetch_videos']),
+# ]

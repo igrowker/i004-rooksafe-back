@@ -63,6 +63,7 @@ jobs:
       DJ_PASSWORD: '${{ secrets.DJ_PASSWORD }}'
       DJ_EMAIL: '${{ secrets.DJ_EMAIL }}'
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
+      YT_API_KEY: '${{ secrets.YT_API_KEY }}'
 
     steps:
 
