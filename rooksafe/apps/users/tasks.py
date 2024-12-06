@@ -1,4 +1,4 @@
-from celery import shared_task
+
 import yfinance as yf
 from .models import StockInvestment
 
