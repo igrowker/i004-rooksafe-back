@@ -95,3 +95,14 @@ class StockInvestment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.stock_symbol}"
+    
+
+class StockSaleHistory(models.Model):
+    investment = models.ForeignKey(StockInvestment, on_delete=models.CASCADE, related_name="sales_history")
+    shares_sold = models.FloatField()  # Number of shares sold
+    sale_price = models.FloatField()  # Price at which the stock was sold
+    total_value = models.FloatField()  # Total value of the transaction (shares_sold * sale_price)
+    sale_date = models.DateTimeField(auto_now_add=True)  # Date of sale
+
+    def __str__(self):
+        return f"Sale of {self.shares_sold} shares of {self.investment.stock_symbol} by {self.investment.user.username}"
