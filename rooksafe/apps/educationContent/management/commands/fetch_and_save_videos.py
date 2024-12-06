@@ -5,7 +5,7 @@ from apps.educationContent.models import EducationContent
 from apps.educationContent.serializers import sanitize_text
 import os
 
-# YOUTUBE_API_KEY = os.environ['YT_API_KEY']
+YOUTUBE_API_KEY = os.environ['YT_API_KEY']
 
 
 
