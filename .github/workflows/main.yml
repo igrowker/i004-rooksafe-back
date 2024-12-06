@@ -49,9 +49,9 @@ jobs:
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
               ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:${{ github.sha }}
 
-  deploy node 2:
+  deploy-second-node:
     needs: build-and-test
-    runs-on:  ["self-hosted",  "rooksafe-r2"]
+    runs-on:  ["self-hosted",,  "rooksafe-r2"]
     env:
       DB_HOST: '${{ secrets.DB_HOST }}'
       DB_PORT: '${{ secrets.DB_PORT }}'
