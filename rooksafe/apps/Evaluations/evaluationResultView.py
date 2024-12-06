@@ -9,16 +9,51 @@ VALID_CHOICES = [1, 2, 3, 4]
 TOTAL_SCORE = 100
 QUESTION_WEIGHT = TOTAL_SCORE / len(VALID_CHOICES)
 
-
+#con tildes
+# LEVEL_MAPPING = {
+#     "básico": {
+#         "profile": "Conservador",
+#         "front_level": "Inicial",
+#         "description": [
+#             "Tenés mucha aversión al riesgo. Preferís inversiones más seguras.",
+#             "Buscás no sufrir pérdidas bajo ninguna circunstancia, o sufrir la menor pérdida posible.",
+#             "Tu foco no es generar una ganancia grande, sino limitar al máximo las pérdidas.",
+#             "Tu benchmark de rendimiento está por debajo del rendimiento promedio del mercado."
+#         ],
+#         "score_range": (0, 45),
+#     },
+#     "intermedio": {
+#         "profile": "Equilibrado",
+#         "front_level": "Intermedio",
+#         "description": [
+#             "Buscás un poco más de rentabilidad.",
+#             "Resignás algo de seguridad por mayor rentabilidad.",
+#             "Intentás tener un portfolio balanceado, generar más ganancias, tomar mayores riesgos,",
+#             "pero no perder de vista el control de pérdidas.",
+#             "Se podría decir que vas a tomar de benchmark un rendimiento de mercado."
+#         ],
+#         "score_range": (46, 80),
+#     },
+#     "avanzado": {
+#         "profile": "Agresivo",
+#         "front_level": "Avanzado",
+#         "description": [
+#             "Buscás generar rendimientos sensiblemente superiores al benchmark promedio de mercado.",
+#             "Para esto tomás mayores riesgos que se pueden traducir en importantes pérdidas de capital, pero sos consciente de eso."
+#         ],
+#         "score_range": (80, 100),
+#     },
+# }
+#sin tildes
 LEVEL_MAPPING = {
-    "básico": {
+    "basico": {
         "profile": "Conservador",
         "front_level": "Inicial",
         "description": [
-            "Tenés mucha aversión al riesgo. Preferís inversiones más seguras.",
-            "Buscás no sufrir pérdidas bajo ninguna circunstancia, o sufrir la menor pérdida posible.",
-            "Tu foco no es generar una ganancia grande, sino limitar al máximo las pérdidas.",
-            "Tu benchmark de rendimiento está por debajo del rendimiento promedio del mercado."
+            "Tenes mucha aversion al riesgo. Preferis inversiones mas seguras.",
+            "Buscas no sufrir perdidas bajo ninguna circunstancia, o sufrir la menor perdida posible.",
+            "Tu foco no es generar una ganancia grande, sino limitar al maximo las perdidas.",
+            "Tu benchmark de rendimiento está por debajo del rendimiento promedio del mercado."
         ],
         "score_range": (0, 45),
     },
@@ -26,11 +61,11 @@ LEVEL_MAPPING = {
         "profile": "Equilibrado",
         "front_level": "Intermedio",
         "description": [
-            "Buscás un poco más de rentabilidad.",
-            "Resignás algo de seguridad por mayor rentabilidad.",
-            "Intentás tener un portfolio balanceado, generar más ganancias, tomar mayores riesgos,",
-            "pero no perder de vista el control de pérdidas.",
-            "Se podría decir que vas a tomar de benchmark un rendimiento de mercado."
+            "Buscas un poco mas de rentabilidad.",
+            "Resignas algo de seguridad por mayor rentabilidad.",
+            "Intentas tener un portfolio balanceado, generar mas ganancias, tomar mayores riesgos,",
+            "pero no perder de vista el control de perdidas.",
+            "Se podria decir que vas a tomar de benchmark un rendimiento de mercado."
         ],
         "score_range": (46, 80),
     },
@@ -38,8 +73,8 @@ LEVEL_MAPPING = {
         "profile": "Agresivo",
         "front_level": "Avanzado",
         "description": [
-            "Buscás generar rendimientos sensiblemente superiores al benchmark promedio de mercado.",
-            "Para esto tomás mayores riesgos que se pueden traducir en importantes pérdidas de capital, pero sos consciente de eso."
+            "Buscas generar rendimientos sensiblemente superiores al benchmark promedio de mercado.",
+            "Para esto tomas mayores riesgos que se pueden traducir en importantes perdidas de capital, pero sos consciente de eso."
         ],
         "score_range": (80, 100),
     },
@@ -104,6 +139,6 @@ class EvaluacionView(APIView):
             "rango_puntaje": f"{level_info['score_range'][0]}-{level_info['score_range'][1]}"
         }
 
-        return JsonResponse(response_data, json_dumps_params={"ensure_ascii": False})
-
+        #return JsonResponse(response_data, json_dumps_params={"ensure_ascii": False})
+        return JsonResponse(response_data)
 
