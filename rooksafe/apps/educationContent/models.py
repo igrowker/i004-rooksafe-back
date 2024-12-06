@@ -4,7 +4,7 @@ from django.db import models
 class EducationContent(models.Model):
     CONTENT_TYPE_CHOICES = [
         ('video', 'Video'),
-        ('artículo', 'Artículo'),
+        ('articulo', 'Artículo'),
         ('podcast', 'Podcast')
     ]
     LEVEL_CHOICES = [
