@@ -16,7 +16,7 @@ def update_wallet_balance(sender, instance, created, **kwargs):
         # investment puede ser add money
         if instance.type in ["investment", "sell"]:
             wallet.balance += instance.amount
-        elif instance.type in ["withdrawal", "buy"]:
-            wallet.balance -= instance.amount
+        # elif instance.type in ["withdrawal", "buy"]:
+        #     wallet.balance -= instance.amount
 
         wallet.save()

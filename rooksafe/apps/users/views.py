@@ -13,6 +13,8 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import yfinance as yf
 from django.db import transaction as db_transaction
+from django.db import transaction as db_transaction
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -91,6 +93,7 @@ class UpdateExperienceLevelView(APIView):
                 'message': 'Experience level updated successfully!',
                 'experience_level': serializer.data['experience_level']
             }, status=status.HTTP_200_OK)
+        
 
 class WalletStatusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -154,8 +157,6 @@ class AddMoneyView(APIView):
         return JsonResponse({'message': 'Nuevo monto añadido', 'balance' : wallet.balance}, status=status.HTTP_200_OK)
 
 
-from django.db import transaction as db_transaction
-
 class BuyTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -170,10 +171,16 @@ class BuyTransactionView(APIView):
             # Obtener el precio actual de la acción usando yfinance
             stock = yf.Ticker(stock_symbol)
             stock_info = stock.history(period="1d")
+
+            # Validar que el historial de precios no esté vacío
+            if stock_info.empty:
+                return JsonResponse({"error": f"No price data found for symbol '{stock_symbol}'."}, status=400)
+
             stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
 
             # Calcular el costo total de la transacción
             total_cost = stock_price * int(shares)
+            print(total_cost) # 243.00000
 
             # Verificar si el usuario tiene suficiente saldo en su wallet
             wallet = Wallet.objects.select_for_update().get(user=request.user)
@@ -202,6 +209,12 @@ class BuyTransactionView(APIView):
                     }
                 )
 
+        except Wallet.DoesNotExist:
+            return JsonResponse({"error": "Wallet not found for the user."}, status=404)
+
+        except yf as e:
+            return JsonResponse({"error": f"Error fetching stock data: {str(e)}"}, status=500)
+
         except Exception as e:
             return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=500)
 
@@ -211,7 +224,7 @@ class BuyTransactionView(APIView):
             "shares_purchased": int(shares),
             "stock_price": stock_price,
             "total_cost": total_cost,
-            "remaining_balance": wallet.balance  
+            "remaining_balance": wallet.balance  # Incluimos el balance actualizado
         }, status=201)
 
 
