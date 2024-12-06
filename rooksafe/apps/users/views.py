@@ -13,6 +13,8 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import yfinance as yf
 from django.db import transaction as db_transaction
+from django.db import transaction as db_transaction
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -91,6 +93,7 @@ class UpdateExperienceLevelView(APIView):
                 'message': 'Experience level updated successfully!',
                 'experience_level': serializer.data['experience_level']
             }, status=status.HTTP_200_OK)
+        
 
 class WalletStatusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -99,22 +102,42 @@ class WalletStatusView(APIView):
         try:
             wallet = Wallet.objects.get(user=request.user)
         except Wallet.DoesNotExist:
-            return JsonResponse({"error": "Not found"}, status=404)
+            return JsonResponse({"error": "Wallet not found"}, status=404)
         
-        # Get the total value of all investments
+        # Total value of all investments
         investments = StockInvestment.objects.filter(user=request.user)
         total_investment_value = sum([investment.current_value for investment in investments])
         
-        # Calculate the total wallet value (balance + investments)
+        # total wallet value
         total_wallet_value = wallet.balance + total_investment_value
+
+        # Total purchase cost for all investments
+        total_purchase_costo = sum([investment.number_of_shares * investment.purchase_price for investment in investments])
+
+        # Historical profit or loss
+        total_profit_loss = total_investment_value - total_purchase_costo
+
+        # JSON of investments
+        transactions = []
+        for investment in investments:
+            transactions.append({
+                "stock_symbol": investment.stock_symbol,
+                "number_of_shares": investment.number_of_shares,
+                "purchase_price": investment.purchase_price,
+                "current_value": investment.current_value,
+                "total_purchase_value": investment.number_of_shares * investment.purchase_price
+            })
 
         data = {
             "balance": wallet.balance,
             "total_investment_value": total_investment_value,
             "total_wallet_value": total_wallet_value,
+            "total_profit_loss": total_profit_loss,
+            "investments": transactions
         }
-        
+
         return JsonResponse(data, status=200)
+
 
 
 # Add money to wallet
@@ -134,8 +157,6 @@ class AddMoneyView(APIView):
         return JsonResponse({'message': 'Nuevo monto añadido', 'balance' : wallet.balance}, status=status.HTTP_200_OK)
 
 
-from django.db import transaction as db_transaction
-
 class BuyTransactionView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -144,21 +165,27 @@ class BuyTransactionView(APIView):
         stock_symbol = request.data.get("stock_symbol")  # Símbolo de la acción
 
         if not shares or int(shares) <= 0:
-            return JsonResponse({"error": "Invalid number of shares."}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({"error": "Invalid number of shares."}, status=400)
 
         try:
             # Obtener el precio actual de la acción usando yfinance
             stock = yf.Ticker(stock_symbol)
             stock_info = stock.history(period="1d")
+
+            # Validar que el historial de precios no esté vacío
+            if stock_info.empty:
+                return JsonResponse({"error": f"No price data found for symbol '{stock_symbol}'."}, status=400)
+
             stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
 
             # Calcular el costo total de la transacción
             total_cost = stock_price * int(shares)
+            print(total_cost) # 243.00000
 
             # Verificar si el usuario tiene suficiente saldo en su wallet
             wallet = Wallet.objects.select_for_update().get(user=request.user)
             if wallet.balance < total_cost:
-                return JsonResponse({"error": "Insufficient funds."}, status=status.HTTP_400_BAD_REQUEST)
+                return JsonResponse({"error": "Insufficient funds."}, status=400)
 
             # Crear la transacción de compra y actualizar la wallet
             with db_transaction.atomic():
@@ -172,7 +199,6 @@ class BuyTransactionView(APIView):
                     status="completed"
                 )
 
-
                 investment, created = StockInvestment.objects.update_or_create(
                     user=request.user,
                     stock_symbol=stock_symbol,
@@ -183,33 +209,23 @@ class BuyTransactionView(APIView):
                     }
                 )
 
+        except Wallet.DoesNotExist:
+            return JsonResponse({"error": "Wallet not found for the user."}, status=404)
+
+        except yf as e:
+            return JsonResponse({"error": f"Error fetching stock data: {str(e)}"}, status=500)
+
         except Exception as e:
-            return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=500)
 
         return JsonResponse({
             "message": "Buy transaction completed.",
             "transaction_id": transaction.id,
             "shares_purchased": int(shares),
             "stock_price": stock_price,
-            "total_cost": total_cost
-        }, status=status.HTTP_201_CREATED)
-
-
-# class SellTransactionView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request):
-#         amount = request.data.get("amount")
-
-#         if not amount or float(amount) <= 0:
-#             return JsonResponse({"error": "Invalid amount."}, status=status.HTTP_400_BAD_REQUEST)
-
-#         with db_transaction.atomic():
-#             wallet = Wallet.objects.select_for_update().get(user=request.user)
-
-#             transaction = Transaction.objects.create(wallet=wallet, type="sell", amount=float(amount), status="completed")
-
-#         return JsonResponse({"message": "Sell transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+            "total_cost": total_cost,
+            "remaining_balance": wallet.balance  # Incluimos el balance actualizado
+        }, status=201)
 
 
 class SellTransactionView(APIView):
@@ -289,3 +305,4 @@ class WithdrawalTransactionView(APIView):
             transaction = Transaction.objects.create(wallet=wallet, type="withdrawal", amount=float(amount), status="completed")
 
         return JsonResponse({"message": "Withdrawal transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
+
