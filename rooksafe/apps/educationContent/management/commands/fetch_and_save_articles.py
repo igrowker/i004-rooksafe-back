@@ -20,7 +20,7 @@ class Command(BaseCommand):
         level_keywords = {
             'básico': ['bitcoin', 'blockchain', 'monedero'],
             'intermedio': ['estrategias', 'análisis', 'ICO', 'Altcoins'],
-            'avanzado': ['DeFi', 'trading', 'contratos', 'investigación']
+            'avanzado': ['DeFi', 'ADA','trading', 'contratos', 'investigación']
         }
 
         # Limit to 3 articles per level
