@@ -198,22 +198,23 @@ class BuyTransactionView(APIView):
                     status="completed"
                 )
 
-                # Actualizar o crear la inversión
-                investment, created = StockInvestment.objects.update_or_create(
-                    user=request.user,
-                    stock_symbol=stock_symbol,
-                    defaults={
-                        'purchase_price': stock_price,  # Precio de compra
-                        'number_of_shares': int(shares),  # Número inicial de acciones
-                        'current_value': stock_price * int(shares),  # Valor actual inicial
-                    },
-                )
-
-                # Si ya existía la inversión, incrementar las acciones y actualizar el valor
-                if not created:
+                # Fetch or create investment
+                try:
+                    investment = StockInvestment.objects.get(user=request.user, stock_symbol=stock_symbol)
+                    # Update existing investment
                     investment.number_of_shares += int(shares)
-                    investment.current_value = stock_price * investment.number_of_shares
-                    investment.save()
+                    investment.current_value = investment.number_of_shares * stock_price
+                except StockInvestment.DoesNotExist:
+                    # Create a new investment
+                    investment = StockInvestment.objects.create(
+                        user=request.user,
+                        stock_symbol=stock_symbol,
+                        purchase_price=stock_price,
+                        number_of_shares=int(shares),
+                        current_value=total_cost
+                    )
+
+                investment.save()
 
                 # Guardar el historial de compras
                 StockPurchaseHistory.objects.create(
@@ -222,6 +223,8 @@ class BuyTransactionView(APIView):
                     sale_price=stock_price,
                     total_value=total_cost
                 )
+                
+                
 
         except Wallet.DoesNotExist:
             return JsonResponse({"error": "Wallet not found for the user."}, status=404)
