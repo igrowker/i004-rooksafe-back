@@ -13,8 +13,9 @@ from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import yfinance as yf
 from django.db import transaction as db_transaction
-from django.db import transaction as db_transaction
-from django.db.models import F
+
+
+
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -164,6 +165,7 @@ class BuyTransactionView(APIView):
         shares = request.data.get("shares")  # Número de acciones a comprar
         stock_symbol = request.data.get("stock_symbol")  # Símbolo de la acción
 
+        # Validar los datos de entrada
         if not shares or int(shares) <= 0:
             return JsonResponse({"error": "Invalid number of shares."}, status=400)
 
@@ -177,49 +179,48 @@ class BuyTransactionView(APIView):
                 return JsonResponse({"error": f"No price data found for symbol '{stock_symbol}'."}, status=400)
 
             stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
+            total_cost = stock_price * int(shares)  # Calcular el costo total
 
-            # Calcular el costo total
-            total_cost = stock_price * int(shares)
-
-            # Obtener la billetera del usuario
-            wallet = Wallet.objects.select_for_update().get(user=request.user)
-            if wallet.balance < total_cost:
-                return JsonResponse({"error": "Insufficient funds."}, status=400)
-
-            # Crear la transacción y actualizar la billetera
+            # Bloque transaccional para garantizar consistencia
             with db_transaction.atomic():
+                # Obtener la billetera del usuario con bloqueo
+                wallet = Wallet.objects.select_for_update().get(user=request.user)
+
+                # Validar balance suficiente
+                if wallet.balance < total_cost:
+                    return JsonResponse({"error": "Insufficient funds."}, status=400)
+
+                # Crear la transacción
                 transaction = Transaction.objects.create(
                     wallet=wallet,
                     type="buy",
                     amount=total_cost,
                     status="completed"
                 )
-                
+
                 # Actualizar o crear la inversión
                 investment, created = StockInvestment.objects.update_or_create(
                     user=request.user,
                     stock_symbol=stock_symbol,
                     defaults={
-                        'purchase_price': stock_price,  # Actualizar el precio de compra
-                        'number_of_shares': int(shares),  # Establecer el número de acciones inicial
+                        'purchase_price': stock_price,  # Precio de compra
+                        'number_of_shares': int(shares),  # Número inicial de acciones
+                        'current_value': stock_price * int(shares),  # Valor actual inicial
                     },
                 )
 
-                # Actualizar el número de acciones y el valor actual
+                # Si ya existía la inversión, incrementar las acciones y actualizar el valor
                 if not created:
                     investment.number_of_shares += int(shares)
-                else:
-                    investment.number_of_shares = int(shares)
-
-                investment.current_value = stock_price * investment.number_of_shares
-                investment.save()
+                    investment.current_value = stock_price * investment.number_of_shares
+                    investment.save()
 
                 # Guardar el historial de compras
                 StockPurchaseHistory.objects.create(
-                    investment = investment,
-                    shares_purchased = int(shares),
-                    sale_price = stock_price,
-                    total_value = total_cost
+                    investment=investment,
+                    shares_purchased=int(shares),
+                    sale_price=stock_price,
+                    total_value=total_cost
                 )
 
         except Wallet.DoesNotExist:
@@ -228,6 +229,7 @@ class BuyTransactionView(APIView):
         except Exception as e:
             return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=500)
 
+        # Respuesta exitosa
         return JsonResponse({
             "message": "Buy transaction completed.",
             "transaction_id": transaction.id,
