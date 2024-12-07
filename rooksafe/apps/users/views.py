@@ -181,6 +181,7 @@ class BuyTransactionView(APIView):
             # Calculate total cost
             total_cost = stock_price * int(shares)
 
+
             # Check if the user has sufficient funds in their wallet
             wallet = Wallet.objects.select_for_update().get(user=request.user)
             if wallet.balance < total_cost:
@@ -188,9 +189,6 @@ class BuyTransactionView(APIView):
 
             # Create the transaction and update the wallet
             with db_transaction.atomic():
-                wallet.balance -= total_cost
-                wallet.save()
-
                 transaction = Transaction.objects.create(
                     wallet=wallet,
                     type="buy",
@@ -208,13 +206,26 @@ class BuyTransactionView(APIView):
                 )
 
                 # If investment exists, add to the current shares
+                # if not created:
+                #     investment.number_of_shares += int(shares)
+                # else:
+                #     investment.number_of_shares = int(shares)
+
+                # # Update the current value of the stock
+                # investment.current_value = stock_price * investment.number_of_shares
+                # investment.save()
+                
                 if not created:
                     investment.number_of_shares += int(shares)
+                    # Calcular nuevo precio promedio ponderado
+                    total_shares = investment.number_of_shares + int(shares)
+                    investment.purchase_price = (
+                        (investment.purchase_price * investment.number_of_shares) + total_cost
+                    ) / total_shares
                 else:
                     investment.number_of_shares = int(shares)
 
-                # Update the current value of the stock
-                investment.current_value = stock_price * investment.number_of_shares
+                investment.current_value = investment.number_of_shares * stock_price
                 investment.save()
 
         except Wallet.DoesNotExist:
@@ -268,13 +279,10 @@ class SellTransactionView(APIView):
                 # Reducir el número de acciones en la inversión
                 investment.number_of_shares -= int(shares)
                 investment.current_value = investment.number_of_shares * stock_price
-                investment.save()
+                # investment.save()
 
                 # Agregar el valor total a la wallet del usuario
                 wallet = Wallet.objects.select_for_update().get(user=request.user)
-                wallet.balance += total_value
-                wallet.save()
-
                 # Registrar la transacción de venta
                 transaction = Transaction.objects.create(
                     wallet=wallet,
@@ -282,6 +290,14 @@ class SellTransactionView(APIView):
                     amount=total_value,
                     status="completed"
                 )
+                # STOCK HISTORY
+                StockSaleHistory.objects.create(
+                    investment=investment,
+                    shares_sold=int(shares),
+                    sale_price=stock_price,
+                    total_value=total_value
+                )
+                investment.save()
 
         except StockInvestment.DoesNotExist:
             return JsonResponse({"error": "No investment found for the given stock symbol."}, status=status.HTTP_404_NOT_FOUND)
@@ -316,59 +332,61 @@ class WithdrawalTransactionView(APIView):
 
         return JsonResponse({"message": "Withdrawal transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
 
-class SellStockView(APIView):
-    permission_classes = [IsAuthenticated]
+# class SellStockView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        stock_symbol = request.data.get("stock_symbol")
-        shares_to_sell = float(request.data.get("shares", 0))
+#     def post(self, request):
+#         stock_symbol = request.data.get("stock_symbol")
+#         shares_to_sell = float(request.data.get("shares", 0))
 
-        if shares_to_sell <= 0:
-            return JsonResponse({"error": "Invalid number of shares."}, status=400)
+#         if shares_to_sell <= 0:
+#             return JsonResponse({"error": "Invalid number of shares."}, status=400)
 
-        try:
-            # Get the user's investment
-            investment = StockInvestment.objects.get(user=request.user, stock_symbol=stock_symbol)
+#         try:
+#             # Get the user's investment
+#             investment = StockInvestment.objects.get(user=request.user, stock_symbol=stock_symbol)
 
-            # Check if the user has enough shares to sell
-            if investment.number_of_shares < shares_to_sell:
-                return JsonResponse({"error": "Insufficient shares to sell."}, status=400)
+#             # Check if the user has enough shares to sell
+#             if investment.number_of_shares < shares_to_sell:
+#                 return JsonResponse({"error": "Insufficient shares to sell."}, status=400)
 
-            # Simulate getting the current stock price (replace with real stock price retrieval logic)
-            stock_price = 100.0  # Example price
-            total_value = shares_to_sell * stock_price
+#             # Simulate getting the current stock price (replace with real stock price retrieval logic)
+#             stock_price = 100.0  # Example price
+#             total_value = shares_to_sell * stock_price
 
-            # Update investment and record the sale
-            with db_transaction.atomic():
-                investment.number_of_shares -= shares_to_sell
-                investment.current_value = investment.number_of_shares * stock_price
-                investment.save()
+#             # Update investment and record the sale
+#             with db_transaction.atomic():
+#                 investment.number_of_shares -= shares_to_sell
+#                 investment.current_value = investment.number_of_shares * stock_price
+#                 investment.save()
 
-                StockSaleHistory.objects.create(
-                    investment=investment,
-                    shares_sold=shares_to_sell,
-                    sale_price=stock_price,
-                    total_value=total_value
-                )
+#                 StockSaleHistory.objects.create(
+#                     investment=investment,
+#                     shares_sold=shares_to_sell,
+#                     sale_price=stock_price,
+#                     total_value=total_value
+#                 )
 
-            return JsonResponse({
-                "message": "Stock sold successfully.",
-                "shares_sold": shares_to_sell,
-                "sale_price": stock_price,
-                "total_value": total_value,
-                "remaining_shares": investment.number_of_shares
-            }, status=200)
+#             return JsonResponse({
+#                 "message": "Stock sold successfully.",
+#                 "shares_sold": shares_to_sell,
+#                 "sale_price": stock_price,
+#                 "total_value": total_value,
+#                 "remaining_shares": investment.number_of_shares
+#             }, status=200)
 
-        except StockInvestment.DoesNotExist:
-            return JsonResponse({"error": "No investment found for the specified stock symbol."}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
-        
+#         except StockInvestment.DoesNotExist:
+#             return JsonResponse({"error": "No investment found for the specified stock symbol."}, status=404)
+#         except Exception as e:
+#             return JsonResponse({"error": str(e)}, status=500)
+
+
 class SaleHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         sale_history = StockSaleHistory.objects.filter(investment__user=request.user).order_by('-sale_date')
+        print(sale_history)
         history_data = [
             {
                 "stock_symbol": sale.investment.stock_symbol,

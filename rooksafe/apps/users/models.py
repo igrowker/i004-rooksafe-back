@@ -105,4 +105,4 @@ class StockSaleHistory(models.Model):
     sale_date = models.DateTimeField(auto_now_add=True)  # Date of sale
 
     def __str__(self):
-        return f"Sale of {self.shares_sold} shares of {self.investment.stock_symbol} by {self.investment.user.username}"
+        return f"Sale of {self.shares_sold} shares of {self.investment.stock_symbol} by {self.investment.user.name}"
