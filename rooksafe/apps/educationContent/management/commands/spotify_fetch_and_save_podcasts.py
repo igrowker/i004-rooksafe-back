@@ -4,8 +4,8 @@ from django.core.management.base import BaseCommand
 from apps.educationContent.models import EducationContent
 import os
 
-# SPOTIFY_CLIENT_ID = os.environ['SPOTIFY_CLIENT_ID']
-# SPOTIFY_CLIENT_SECRET = os.environ['SPOTIFY_CLIENT_SECRET']
+SPOTIFY_CLIENT_ID = os.environ['SPOTIFY_CLIENT_ID']
+SPOTIFY_CLIENT_SECRET = os.environ['SPOTIFY_CLIENT_SECRET']
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 SEARCH_URL = "https://api.spotify.com/v1/search"
 
