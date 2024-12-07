@@ -5,8 +5,8 @@ from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, WalletSerializer
-from .models import Wallet, Transaction, StockInvestment
+from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer
+from .models import Wallet, Transaction, StockInvestment, StockSaleHistory, StockPurchaseHistory
 from .serializers import RegisterSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer, UpdateExperienceLevelSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
@@ -14,7 +14,7 @@ from django.http import JsonResponse
 import yfinance as yf
 from django.db import transaction as db_transaction
 from django.db import transaction as db_transaction
-
+from django.db.models import F
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -172,48 +172,57 @@ class BuyTransactionView(APIView):
             stock = yf.Ticker(stock_symbol)
             stock_info = stock.history(period="1d")
 
-            # Validar que el historial de precios no esté vacío
+            # Validar que existen datos de precios
             if stock_info.empty:
                 return JsonResponse({"error": f"No price data found for symbol '{stock_symbol}'."}, status=400)
 
             stock_price = stock_info["Close"].iloc[-1]  # Precio de cierre más reciente
 
-            # Calcular el costo total de la transacción
+            # Calcular el costo total
             total_cost = stock_price * int(shares)
-            print(total_cost) # 243.00000
 
-            # Verificar si el usuario tiene suficiente saldo en su wallet
+            # Obtener la billetera del usuario
             wallet = Wallet.objects.select_for_update().get(user=request.user)
             if wallet.balance < total_cost:
                 return JsonResponse({"error": "Insufficient funds."}, status=400)
 
-            # Crear la transacción de compra y actualizar la wallet
+            # Crear la transacción y actualizar la billetera
             with db_transaction.atomic():
-                wallet.balance -= total_cost
-                wallet.save()
-
                 transaction = Transaction.objects.create(
                     wallet=wallet,
                     type="buy",
                     amount=total_cost,
                     status="completed"
                 )
-
+                
+                # Actualizar o crear la inversión
                 investment, created = StockInvestment.objects.update_or_create(
                     user=request.user,
                     stock_symbol=stock_symbol,
                     defaults={
-                        'number_of_shares': int(shares),
-                        'purchase_price': stock_price,
-                        'current_value': stock_price * int(shares),
-                    }
+                        'purchase_price': stock_price,  # Actualizar el precio de compra
+                    },
+                )
+
+                # Actualizar el número de acciones y el valor actual
+                if not created:
+                    investment.number_of_shares += int(shares)
+                else:
+                    investment.number_of_shares = int(shares)
+
+                investment.current_value = stock_price * investment.number_of_shares
+                investment.save()
+
+                # Guardar el historial de compras
+                StockPurchaseHistory.objects.create(
+                    investment = investment,
+                    shares_purchased = int(shares),
+                    sale_price = stock_price,
+                    total_value = total_cost
                 )
 
         except Wallet.DoesNotExist:
             return JsonResponse({"error": "Wallet not found for the user."}, status=404)
-
-        except yf as e:
-            return JsonResponse({"error": f"Error fetching stock data: {str(e)}"}, status=500)
 
         except Exception as e:
             return JsonResponse({"error": f"Transaction failed: {str(e)}"}, status=500)
@@ -224,8 +233,14 @@ class BuyTransactionView(APIView):
             "shares_purchased": int(shares),
             "stock_price": stock_price,
             "total_cost": total_cost,
-            "remaining_balance": wallet.balance  # Incluimos el balance actualizado
+            "remaining_balance": wallet.balance,
+            "investment": {
+                "stock_symbol": investment.stock_symbol,
+                "number_of_shares": investment.number_of_shares,
+                "current_value": investment.current_value,
+            }
         }, status=201)
+
 
 
 class SellTransactionView(APIView):
@@ -258,13 +273,10 @@ class SellTransactionView(APIView):
                 # Reducir el número de acciones en la inversión
                 investment.number_of_shares -= int(shares)
                 investment.current_value = investment.number_of_shares * stock_price
-                investment.save()
+                # investment.save()
 
                 # Agregar el valor total a la wallet del usuario
                 wallet = Wallet.objects.select_for_update().get(user=request.user)
-                wallet.balance += total_value
-                wallet.save()
-
                 # Registrar la transacción de venta
                 transaction = Transaction.objects.create(
                     wallet=wallet,
@@ -272,6 +284,14 @@ class SellTransactionView(APIView):
                     amount=total_value,
                     status="completed"
                 )
+                # STOCK HISTORY
+                StockSaleHistory.objects.create(
+                    investment=investment,
+                    shares_sold=int(shares),
+                    sale_price=stock_price,
+                    total_value=total_value
+                )
+                investment.save()
 
         except StockInvestment.DoesNotExist:
             return JsonResponse({"error": "No investment found for the given stock symbol."}, status=status.HTTP_404_NOT_FOUND)
@@ -306,3 +326,48 @@ class WithdrawalTransactionView(APIView):
 
         return JsonResponse({"message": "Withdrawal transaction completed.", "transaction_id": transaction.id}, status=status.HTTP_201_CREATED)
 
+
+class SaleHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtener el historial de ventas para el usuario autenticado
+        sale_history = StockSaleHistory.objects.filter(investment__user=request.user).order_by('-sale_date')
+
+        # Obtener el historial de compras para el usuario autenticado
+        purchase_history = StockPurchaseHistory.objects.filter(investment__user=request.user).order_by('-sale_date')
+
+        # Si no existen ventas ni compras, retornar mensaje de no encontrado
+        if not sale_history.exists() and not purchase_history.exists():
+            return JsonResponse({"message": "No transactions found."}, status=404)
+
+        # Formatear los datos de la respuesta para ventas
+        sale_data = [
+            {
+                "stock_symbol": sale.investment.stock_symbol,
+                "shares_sold": sale.shares_sold,
+                "sale_price": sale.sale_price,
+                "total_value": sale.total_value,
+                "sale_date": sale.sale_date
+            }
+            
+            for sale in sale_history
+        ]
+
+        # Formatear los datos de la respuesta para compras
+        purchase_data = [
+            {
+                "stock_symbol": purchase.investment.stock_symbol,
+                "shares_purchased": purchase.shares_purchased,
+                "purchase_price": purchase.sale_price,
+                "total_value": purchase.total_value,
+                "sale_date": purchase.sale_date
+            }
+            for purchase in purchase_history
+        ]
+
+        # Retornar el historial de ventas y compras combinados
+        return JsonResponse({
+            "sales_history": sale_data,
+            "purchase_history": purchase_data
+        }, status=200)
