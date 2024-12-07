@@ -94,7 +94,7 @@ class StockInvestment(models.Model):
     current_value = models.FloatField(default=0)  # Current value of the stock (calculated)
 
     def __str__(self):
-        return f"{self.user.username} - {self.stock_symbol}"
+        return f"{self.user.name} - {self.stock_symbol}"
     
 
 class StockSaleHistory(models.Model):
