@@ -201,6 +201,7 @@ class BuyTransactionView(APIView):
                     stock_symbol=stock_symbol,
                     defaults={
                         'purchase_price': stock_price,  # Actualizar el precio de compra
+                        'number_of_shares': int(shares),  # Establecer el número de acciones inicial
                     },
                 )
 
