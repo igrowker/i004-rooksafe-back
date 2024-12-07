@@ -65,6 +65,8 @@ jobs:
       EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
       YT_API_KEY: '${{ secrets.YT_API_KEY }}'
       REDIS_URL: '${{ secrets.REDIS_URL }}'
+      SPOTIFY_CLIENT_ID : '${{ secrets.SPOTIFY_CLIENT_ID  }}'
+      SPOTIFY_CLIENT_SECRET : '${{ secrets.SPOTIFY_CLIENT_SECRET }}'
     steps:
 
       - name: Checkout
