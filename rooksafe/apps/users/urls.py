@@ -21,7 +21,7 @@ urlpatterns = [
     path('api/wallet/buy', BuyTransactionView.as_view(), name='buy_transaction'),
     path('api/wallet/sell', SellTransactionView.as_view(), name='sell_transaction'),
     path('api/wallet/withdrawal', WithdrawalTransactionView.as_view(), name='withdrawal_transaction'),
-    path('api/wallet/story', SaleHistoryView.as_view(), name='withdrawal_transaction'),
+    path('api/wallet/history', SaleHistoryView.as_view(), name='withdrawal_transaction'),
     
 
 
