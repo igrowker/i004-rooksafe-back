@@ -13,11 +13,13 @@ ALLOWED_HOSTS = ['*']
 # Load the .env file
 load_dotenv()
 
+schema = os.environ.get('DB_SCHEMA', "public") # si no encuentra el schema enviado por el .env, es publico por defecto
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'OPTIONS': {
-             'options': '-c search_path="RooksafeDBSchema"'
+             'options': f'-c search_path={schema}'  # Usar un schema diferente
          },
         'NAME': os.environ['DB_NAME'],
         'USER': os.environ['DB_USER'],

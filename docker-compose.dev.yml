@@ -38,7 +38,8 @@ services:
       - YT_API_KEY=${YT_API_KEY}
       - REDIS_URL=${REDIS_URL}            
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}            
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - DB_SCHEMA=${DB_SCHEMA}                    
     working_dir: /usr/share/app
     volumes:
       - static:/usr/share/app/site_app/static
