@@ -1,22 +1,9 @@
 services:
-  db:
-    image: postgres:15.1-alpine
+  redis-rooksafe:
+    image: redis:alpine
     restart: always
-    environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
-      - PGUSER=${DB_USER}
-    volumes:
-      - pgdata:/var/lib/postgresql/data/
     ports:
-      - "5432:5432"
-    healthcheck:
-        test: ["CMD-SHELL", "pg_isready", "-d", "${DB_NAME}"]
-        interval: 30s
-        timeout: 60s
-        retries: 5
-        start_period: 80s
+      - "6379:6379"
     networks:
       - rooksafe
   rooksafe-back:
@@ -24,6 +11,8 @@ services:
       context: .
     image: igrowker/i004-rooksafe-back
     restart: always
+    depends_on:
+      - redis-rooksafe    
     environment:
       - DJANGO_SUPERUSER_USERNAME=${DJ_USERNAME}
       - DJANGO_SUPERUSER_PASSWORD=${DJ_PASSWORD}
@@ -38,15 +27,10 @@ services:
       - YT_API_KEY=${YT_API_KEY}
       - REDIS_URL=${REDIS_URL}            
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}            
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}              
     working_dir: /usr/share/app
     volumes:
       - static:/usr/share/app/site_app/static
-    depends_on:
-      redis-rooksafe:
-        condition: service_started
-      db:
-          condition: service_healthy
     networks:
       - rooksafe
   rooksafe-proxy:
@@ -60,19 +44,12 @@ services:
       - ./nginx/my_ginx.conf:/etc/nginx/sites-available/my_ginx.conf
       - static:/app/static
     depends_on:
-      - rooksafe-back
+      redis-rooksafe:
+        condition: service_started
     networks:
       - rooksafe
-  redis-rooksafe:
-    image: redis:alpine
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - rooksafe  
 
 volumes:
-  pgdata:
   static:
 
 networks:
