@@ -67,6 +67,7 @@ jobs:
       REDIS_URL: '${{ secrets.REDIS_URL }}'
       SPOTIFY_CLIENT_ID : '${{ secrets.SPOTIFY_CLIENT_ID  }}'
       SPOTIFY_CLIENT_SECRET : '${{ secrets.SPOTIFY_CLIENT_SECRET }}'
+      DB_SCHEMA: '${{ secrets.DB_SCHEMA }}'       
     steps:
 
       - name: Checkout
