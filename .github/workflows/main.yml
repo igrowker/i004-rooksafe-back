@@ -99,3 +99,55 @@ jobs:
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations educationContent
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py migrate
           docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py fetch_content
+
+
+  deploy-first-node:
+    needs: build-and-test
+    runs-on:  ["self-hosted", "rooksafe-r1"]
+    env:
+      DB_HOST: '${{ secrets.DB_HOST }}'
+      DB_PORT: '${{ secrets.DB_PORT }}'
+      DB_NAME: '${{ secrets.DB_NAME }}'
+      DB_USER: '${{ secrets.DB_USER }}'
+      DB_PASSWORD: '${{ secrets.DB_PASSWORD }}'
+      SECRET_KEY: '${{ secrets.SECRET_KEY }}'
+      DJ_USERNAME: '${{ secrets.DJ_USERNAME }}'
+      DJ_PASSWORD: '${{ secrets.DJ_PASSWORD }}'
+      DJ_EMAIL: '${{ secrets.DJ_EMAIL }}'
+      EXPERIENCE_LEVEL: '${{ secrets.EXPERIENCE_LEVEL }}'
+      YT_API_KEY: '${{ secrets.YT_API_KEY }}'
+      REDIS_URL: '${{ secrets.REDIS_URL }}'
+      SPOTIFY_CLIENT_ID : '${{ secrets.SPOTIFY_CLIENT_ID  }}'
+      SPOTIFY_CLIENT_SECRET : '${{ secrets.SPOTIFY_CLIENT_SECRET }}'
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Delete Previous 
+        run: |
+          docker-compose stop rooksafe-back && docker-compose rm rooksafe-back
+
+      - name: Pull and Deploy
+        run: |
+          docker-compose pull && docker-compose up -d   
+
+      - name: Remove old Images
+        run: |
+          images=$(docker images -f dangling=true -q)
+          if [ -n "$images" ]; then
+              docker rmi $images
+          else
+              echo "No dangling images to remove."
+          fi
+      
+      - name: Post Deploy Tasks
+        run: |
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py collectstatic --noinput
+          docker-compose -f docker-compose.yml exec -it rooksafe-back find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+          docker-compose -f docker-compose.yml exec -it rooksafe-back find . -path "*/migrations/*.pyc"  -delete
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations users
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations Evaluations
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py makemigrations educationContent
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py migrate
+          docker-compose -f docker-compose.yml exec -it rooksafe-back python3 manage.py fetch_content
