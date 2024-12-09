@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 
 user = get_user_model()
 
-VALID_CHOICES = [1, 2, 3, 4]
+VALID_CHOICES = [1, 2, 3, 3]
 TOTAL_SCORE = 100
 QUESTION_WEIGHT = TOTAL_SCORE / len(VALID_CHOICES)
 
